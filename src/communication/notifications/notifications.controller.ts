@@ -9,8 +9,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
 
 @Controller('notifications')

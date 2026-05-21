@@ -19,15 +19,30 @@ export class AdminService {
   }
 
   async getUsers(query: any) {
-    const { page = 1, limit = 20, search = '', role = null } = query;
+    const page = Number(query.page ?? 1);
+    const limit = Number(query.limit ?? 20);
+    const search = query.search || '';
+    const role = query.role || null;
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
+        {
+          profile: {
+            is: {
+              firstName: { contains: search, mode: 'insensitive' },
+            },
+          },
+        },
+        {
+          profile: {
+            is: {
+              lastName: { contains: search, mode: 'insensitive' },
+            },
+          },
+        },
       ];
     }
     if (role) {
@@ -42,11 +57,16 @@ export class AdminService {
         select: {
           id: true,
           email: true,
-          firstName: true,
-          lastName: true,
           role: true,
           isActive: true,
           createdAt: true,
+          profile: {
+            select: {
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
+          },
         },
       }),
       this.prisma.user.count({ where }),
@@ -71,15 +91,21 @@ export class AdminService {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
         isActive: true,
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
   }
 
   async getCourses(query: any) {
-    const { page = 1, limit = 20, search = '' } = query;
+    const page = Number(query.page ?? 1);
+    const limit = Number(query.limit ?? 20);
+    const search = query.search || '';
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -100,10 +126,18 @@ export class AdminService {
           title: true,
           description: true,
           isActive: true,
-          teacher: {
-            select: { email: true, firstName: true, lastName: true },
-          },
           createdAt: true,
+          teacher: {
+            select: { 
+              email: true, 
+              profile: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
         },
       }),
       this.prisma.course.count({ where }),

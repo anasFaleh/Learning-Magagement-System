@@ -29,8 +29,6 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     AdminController,
     AdminUsersController,
     AdminCoursesController,
-    AdminPaymentsController,
-    AdminCouponsController,
     AdminAnalyticsController,
   ],
   providers: [

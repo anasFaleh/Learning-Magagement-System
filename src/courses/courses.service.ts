@@ -155,6 +155,11 @@ export class CoursesService {
       ];
     }
 
+    // تأمين قيم الـ Pagination لمنع أخطاء Strict Null Checks (TS18048)
+    const page = Number(query?.page ?? 1);
+    const limit = Number(query?.limit ?? 10);
+    const skip = (page - 1) * limit;
+
     const [courses, total] = await Promise.all([
       this.prisma.course.findMany({
         where,
@@ -162,16 +167,16 @@ export class CoursesService {
           teacher: { select: { id: true, email: true, profile: true } },
           _count: { select: { enrollments: true } },
         },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
+        skip,
+        take: limit,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.course.count({ where }),
     ]);
 
-    return { courses, total, page: query.page, limit: query.limit };
+    return { courses, total, page, limit };
   }
-
+  
   // Get courses the current student is enrolled in (student‑only)
   async getEnrolledCourses(
     userId: string,

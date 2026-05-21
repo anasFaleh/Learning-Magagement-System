@@ -14,7 +14,7 @@ import { CreateLectureDto, UpdateLectureDto } from '../dto/lecture.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CourseOwnershipGuard } from '../../courses/guards/course-ownership.guard';
 import { CourseEnrollmentGuard } from '../guards/course-enrollment.guard';
-import { CourseParam } from '../decorators/course-param.decorator';
+import { CourseParam } from '../../common/decorators/course-param.decorator';
 import { RequireCourseOwnership } from '../../courses/decorators/require-course-ownership.decorator';
 
 @Controller('courses/:courseId/lectures')

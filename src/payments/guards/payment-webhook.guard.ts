@@ -18,7 +18,7 @@ export class PaymentWebhookGuard implements CanActivate {
     if (!secretKey || !webhookSecret) return false;
 
     const stripe = new Stripe(secretKey, {
-      apiVersion: '2023-08-16',
+      apiVersion: '2026-04-22.dahlia',
     });
 
     try {

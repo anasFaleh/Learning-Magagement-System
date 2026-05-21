@@ -1,6 +1,6 @@
 // notifications.service.ts
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NOTIFICATION_EVENTS } from './events/notification-events';
 

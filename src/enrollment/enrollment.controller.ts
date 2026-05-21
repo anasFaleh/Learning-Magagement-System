@@ -55,7 +55,10 @@ export class EnrollmentController {
     @Param('courseId') courseId: string,
     @Query() query: EnrollmentQueryDto,
   ) {
-    return this.enrollmentService.getCourseEnrollments(courseId, query);
+    return this.enrollmentService.getCourseEnrollments(courseId, {
+      page: Number(query?.page ?? 1),
+      limit: Number(query?.limit ?? 10),
+    } as any);
   }
 
   // Teacher/Admin: update student progress
@@ -75,6 +78,9 @@ export class EnrollmentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('STUDENT')
   getMyEnrollments(@CurrentUser() user, @Query() query: EnrollmentQueryDto) {
-    return this.enrollmentService.getStudentEnrollments(user.userId, query);
+    return this.enrollmentService.getStudentEnrollments(user.userId, {
+      page: Number(query?.page ?? 1),
+      limit: Number(query?.limit ?? 10),
+    } as any);
   }
 }
