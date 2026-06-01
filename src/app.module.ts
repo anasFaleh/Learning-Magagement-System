@@ -9,10 +9,16 @@ import { PaymentsModule } from './payments/payments.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { AdminModule } from './admin/admin.module';
 import { ConfigModule } from '@nestjs/config';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { WinstonConfig } from './common/interceptors/logger.config';
+import { WinstonModule } from 'nest-winston/dist/winston.module';
+import { LoggerInterceptor } from './common/interceptors/logger.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), 
+    WinstonModule.forRoot(WinstonConfig),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -23,5 +29,12 @@ import { ConfigModule } from '@nestjs/config';
     EnrollmentModule,
     AdminModule,
   ],
+  providers: [
+    AllExceptionsFilter,
+      {
+        provide: APP_INTERCEPTOR,
+        useClass: LoggerInterceptor,
+      },
+    ]
 })
 export class AppModule {}

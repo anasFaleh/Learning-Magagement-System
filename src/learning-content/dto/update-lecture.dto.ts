@@ -1,5 +1,20 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
 export class UpdateLectureDto {
-  @IsOptional() @IsString() title?: string;
-  @IsOptional() @IsString() content?: string;
+  @ApiPropertyOptional({
+    description: 'Updated lecture title',
+    example: 'Advanced JavaScript Concepts',
+  })
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiPropertyOptional({
+    description: 'Updated lecture content',
+    example: 'Updated content covering closures and prototypes',
+  })
+  @IsOptional()
+  @IsString()
+  content?: string;
 }

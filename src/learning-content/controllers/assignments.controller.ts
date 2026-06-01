@@ -8,6 +8,7 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { LearningContentService } from '../learning-content.service';
 import { CreateAssignmentDto } from '../dto/create-assignment.dto';
 import { UpdateAssignmentDto } from '../dto/update-assignment.dto';
@@ -17,6 +18,8 @@ import { CourseOwnershipGuard } from '../../courses/guards/course-ownership.guar
 import { CourseParam } from '../../common/decorators/course-param.decorator';
 import { RequireCourseOwnership } from '../../courses/decorators/require-course-ownership.decorator';
 
+@ApiTags('Assignments')
+@ApiBearerAuth('JWT-auth')
 @Controller('courses/:courseId/assignments')
 export class AssignmentsController {
   constructor(private readonly contentService: LearningContentService) {}
@@ -24,6 +27,10 @@ export class AssignmentsController {
   @Get()
   @UseGuards(JwtAuthGuard, CourseEnrollmentGuard)
   @CourseParam('courseId')
+  @ApiOperation({ summary: 'Get all assignments in a course' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiResponse({ status: 200, description: 'Assignments retrieved successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not enrolled in course' })
   getAssignments(@Param('courseId') courseId: string) {
     return this.contentService.getAssignments(courseId);
   }
@@ -31,6 +38,12 @@ export class AssignmentsController {
   @Get(':assignmentId')
   @UseGuards(JwtAuthGuard, CourseEnrollmentGuard)
   @CourseParam('courseId')
+  @ApiOperation({ summary: 'Get a specific assignment' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
+  @ApiResponse({ status: 200, description: 'Assignment retrieved' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not enrolled in course' })
+  @ApiResponse({ status: 404, description: 'Assignment not found' })
   getAssignment(
     @Param('courseId') courseId: string,
     @Param('assignmentId') assignmentId: string,
@@ -41,6 +54,11 @@ export class AssignmentsController {
   @Post()
   @UseGuards(JwtAuthGuard, CourseOwnershipGuard)
   @RequireCourseOwnership('courseId')
+  @ApiOperation({ summary: 'Create a new assignment (teacher/admin only)' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiResponse({ status: 201, description: 'Assignment created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid assignment data' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
   createAssignment(
     @Param('courseId') courseId: string,
     @Body() dto: CreateAssignmentDto,
@@ -51,6 +69,12 @@ export class AssignmentsController {
   @Patch(':assignmentId')
   @UseGuards(JwtAuthGuard, CourseOwnershipGuard)
   @RequireCourseOwnership('courseId')
+  @ApiOperation({ summary: 'Update an assignment (teacher/admin only)' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
+  @ApiResponse({ status: 200, description: 'Assignment updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
+  @ApiResponse({ status: 404, description: 'Assignment not found' })
   updateAssignment(
     @Param('courseId') courseId: string,
     @Param('assignmentId') assignmentId: string,
@@ -62,6 +86,12 @@ export class AssignmentsController {
   @Delete(':assignmentId')
   @UseGuards(JwtAuthGuard, CourseOwnershipGuard)
   @RequireCourseOwnership('courseId')
+  @ApiOperation({ summary: 'Delete an assignment (teacher/admin only)' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
+  @ApiResponse({ status: 200, description: 'Assignment deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
+  @ApiResponse({ status: 404, description: 'Assignment not found' })
   deleteAssignment(
     @Param('courseId') courseId: string,
     @Param('assignmentId') assignmentId: string,

@@ -105,13 +105,18 @@ export class UsersService {
   }
 
   // Admin: toggle user active status
-  async setUserActiveStatus(userId: string, isActive: boolean) {
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { isActive },
-      select: { id: true, email: true, isActive: true },
-    });
-  }
+async setUserActiveStatus(userId: string) {
+  const user = await this.prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, isActive: true },
+  });
+  if (!user) throw new NotFoundException('User not found');
+  return this.prisma.user.update({
+    where: { id: userId },
+    data: { isActive: !user.isActive },
+    select: { id: true, email: true, isActive: true },
+  });
+}
 
   // Admin: search users with pagination
   async searchUsers(query: UserQueryDto) {

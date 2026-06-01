@@ -24,6 +24,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, GoogleStrategy],
-  exports: [AuthService], // if needed by other modules for role checks, but careful about token generation
+  exports: [AuthService], 
 })
 export class AuthModule {}

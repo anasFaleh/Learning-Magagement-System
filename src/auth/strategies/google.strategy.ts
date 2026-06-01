@@ -12,11 +12,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private authService: AuthService,
   ) {
     super({
-      clientID: config.get('GOOGLE_CLIENT_ID'),
-      clientSecret: config.get('GOOGLE_CLIENT_SECRET'),
-      callbackURL: config.get('GOOGLE_CALLBACK_URL'),
+      clientID: config.get<string>('GOOGLE_CLIENT_ID'),
+      clientSecret: config.get<string>('GOOGLE_CLIENT_SECRET'),
+      callbackURL: 'http://localhost:3000/auth/google/callback',
       scope: ['email', 'profile'],
     });
+  }
+
+  authorizationParams(options: any): any {
+    return {
+      ...options,
+      redirect_uri: 'http://localhost:3000/auth/google/callback',
+    };
   }
 
   async validate(
@@ -31,6 +38,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       email: emails[0].value,
       name: name.givenName + ' ' + name.familyName,
     });
-    done(null, { tokens: user }); // pass tokens to callback
+    
+    done(null, user); 
   }
 }

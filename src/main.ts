@@ -4,8 +4,9 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'; // 👈 Imported Swagger utilities
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'; 
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -14,8 +15,8 @@ async function bootstrap() {
   );
 
   // Global Validation Configuration
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
-
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }));
+  app.useGlobalFilters(app.get(AllExceptionsFilter));
   // 1. Configure Swagger Options (Completely in English)
   const config = new DocumentBuilder()
     .setTitle('LMS Platform API')

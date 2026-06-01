@@ -1,4 +1,3 @@
-// users.controller.ts
 import {
   Controller,
   Get,
@@ -8,6 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserQueryDto } from './dto/user-query.dto';
@@ -19,20 +19,28 @@ import { SelfOrAdminGuard } from './guards/self-or-admin.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '@prisma/client';
 
+@ApiTags('Users')
+@ApiBearerAuth('JWT-auth')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // Get current user's own profile
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current authenticated user profile' })
+  @ApiResponse({ status: 200, description: 'User profile retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT' })
   async getMyProfile(@CurrentUser() user: { userId: string; role: UserRole }) {
     return this.usersService.getMyProfile(user.userId);
   }
 
-  // Get a user by ID (role‑scoped)
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get user details by ID (self or admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User details retrieved' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot access other users profile' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async getUser(
     @CurrentUser() user: { userId: string; role: UserRole },
     @Param('id') id: string,
@@ -40,10 +48,14 @@ export class UsersController {
     return this.usersService.getUserById(user, id);
   }
 
-  // Update profile – self or admin
   @Patch(':id/profile')
   @UseGuards(JwtAuthGuard, SelfOrAdminGuard)
-  @SelfOrAdmin('id') // triggers guard; param name matches route
+  @SelfOrAdmin('id')
+  @ApiOperation({ summary: 'Update user profile (self or admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot update other users profile' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async updateProfile(
     @CurrentUser() user: { userId: string; role: UserRole },
     @Param('id') id: string,
@@ -52,21 +64,31 @@ export class UsersController {
     return this.usersService.updateProfile(user, id, dto);
   }
 
-  // Admin: activate/deactivate user
   @Patch(':id/activation')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @ApiOperation({ summary: 'Activate or deactivate user account (admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User activation status updated' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only admins can manage user activation' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async setActivation(
     @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
   ) {
-    return this.usersService.setUserActiveStatus(id, isActive);
+    return this.usersService.setUserActiveStatus(id);
   }
 
-  // Admin: search users
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @ApiOperation({ summary: 'Search and filter users (admin only)' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by name or email' })
+  @ApiQuery({ name: 'role', required: false, description: 'Filter by user role' })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Results per page' })
+  @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only admins can search users' })
   async searchUsers(@Query() query: UserQueryDto) {
     return this.usersService.searchUsers(query);
   }

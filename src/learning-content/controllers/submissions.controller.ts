@@ -7,6 +7,7 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { LearningContentService } from '../learning-content.service';
 import { SubmitAssignmentDto } from '../dto/submit-assignment.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -16,6 +17,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CourseOwnershipGuard } from '../../courses/guards/course-ownership.guard';
 import { RequireCourseOwnership } from '../../courses/decorators/require-course-ownership.decorator';
 
+@ApiTags('Submissions')
+@ApiBearerAuth('JWT-auth')
 @Controller('courses/:courseId/assignments/:assignmentId')
 export class SubmissionsController {
   constructor(private readonly contentService: LearningContentService) {}
@@ -23,6 +26,12 @@ export class SubmissionsController {
   @Post('submit')
   @UseGuards(JwtAuthGuard, CourseEnrollmentGuard)
   @CourseParam('courseId')
+  @ApiOperation({ summary: 'Submit assignment (students only)' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
+  @ApiResponse({ status: 201, description: 'Assignment submitted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only students can submit' })
+  @ApiResponse({ status: 404, description: 'Assignment not found' })
   submit(
     @Param('courseId') courseId: string,
     @Param('assignmentId') assignmentId: string,
@@ -42,6 +51,11 @@ export class SubmissionsController {
   @Get('submissions')
   @UseGuards(JwtAuthGuard, CourseOwnershipGuard)
   @RequireCourseOwnership('courseId')
+  @ApiOperation({ summary: 'Get all submissions for assignment (teacher/admin only)' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
+  @ApiResponse({ status: 200, description: 'Submissions retrieved' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
   getSubmissions(
     @Param('courseId') courseId: string,
     @Param('assignmentId') assignmentId: string,
@@ -52,6 +66,11 @@ export class SubmissionsController {
   @Get('my-submission')
   @UseGuards(JwtAuthGuard, CourseEnrollmentGuard)
   @CourseParam('courseId')
+  @ApiOperation({ summary: 'Get current student submission' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
+  @ApiResponse({ status: 200, description: 'Student submission retrieved' })
+  @ApiResponse({ status: 404, description: 'Submission not found' })
   getMySubmission(
     @Param('courseId') courseId: string,
     @Param('assignmentId') assignmentId: string,
