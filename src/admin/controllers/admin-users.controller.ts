@@ -39,7 +39,7 @@ export class AdminUsersController {
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User activation status updated' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  setActivation(@Param('id') id: string, @Body('isActive') isActive: boolean) {
-    return this.adminService.setUserActiveStatus(id, isActive);
+  setActivation(@Param('id') id: string) {
+    return this.adminService.setUserActiveStatus(id);
   }
 }

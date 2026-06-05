@@ -81,13 +81,13 @@ export class AdminService {
     };
   }
 
-  async setUserActiveStatus(userId: string, isActive: boolean) {
+  async setUserActiveStatus(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
     return this.prisma.user.update({
       where: { id: userId },
-      data: { isActive },
+      data: { isActive: !user.isActive },
       select: {
         id: true,
         email: true,
@@ -152,7 +152,7 @@ export class AdminService {
     };
   }
 
-  async setCourseActiveStatus(courseId: string, isActive: boolean) {
+  async setCourseActiveStatus(courseId: string) {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
     });
@@ -160,7 +160,7 @@ export class AdminService {
 
     return this.prisma.course.update({
       where: { id: courseId },
-      data: { isActive },
+      data: { isActive: !course.isActive },
       select: {
         id: true,
         title: true,

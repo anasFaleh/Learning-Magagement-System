@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
@@ -25,6 +26,14 @@ export class CoursesService {
     requestor: { userId: string; role: UserRole },
     dto: CreateCourseDto,
   ) {
+    const courseWithSameTitle = await this.prisma.course.findUnique({
+      where: { title: dto.title },
+    });
+    
+    if (courseWithSameTitle) {
+      throw new ConflictException('Course title must be unique');
+    }
+
     let teacherId = dto.teacherId;
 
     if (requestor.role === UserRole.ADMIN) {

@@ -31,8 +31,7 @@ export class AdminCoursesController {
   @ApiResponse({ status: 404, description: 'Course not found' })
   setCourseActivation(
     @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
   ) {
-    return this.adminService.setCourseActiveStatus(id, isActive);
+    return this.adminService.setCourseActiveStatus(id);
   }
 }

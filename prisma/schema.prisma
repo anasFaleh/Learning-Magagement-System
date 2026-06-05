@@ -63,7 +63,7 @@ model Profile {
 
 model Course {
   id          String   @id @default(cuid())
-  title       String
+  title       String @unique
   description String?
   teacherId   String
   teacher     User     @relation("CourseTeacher", fields: [teacherId], references: [id])
@@ -188,7 +188,7 @@ model Lecture {
   courseId    String
   course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  title       String
+  title       String   @unique
   description String?
   videoUrl    String?
   documentUrl String?

@@ -67,7 +67,7 @@ export class CoursesController {
   @Roles('TEACHER', 'ADMIN')
   @ApiOperation({ summary: 'Create a new course (teachers/admins only)' })
   @ApiResponse({ status: 201, description: 'Course created successfully' })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid course data' })
+  @ApiResponse({ status: 409, description: 'Conflict - Course title must be unique' })
   @ApiResponse({ status: 403, description: 'Forbidden - Only teachers and admins can create courses' })
   createCourse(
     @CurrentUser() user: { userId: string; role: UserRole },

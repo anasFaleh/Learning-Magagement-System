@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLectureDto, UpdateLectureDto } from './dto/lecture.dto';
@@ -34,6 +35,11 @@ export class LearningContentService {
   }
 
   async createLecture(courseId: string, dto: CreateLectureDto) {
+    const lecture = await this.prisma.lecture.findUnique({
+      where: { title: dto.title, courseId },
+    });
+    
+    if (lecture) throw new ConflictException('Lecture title must be unique');
     return this.prisma.lecture.create({
       data: {
         ...dto,
