@@ -3,8 +3,10 @@ import {
   WebSocketServer, 
   SubscribeMessage, 
   OnGatewayConnection, 
-  OnGatewayDisconnect 
+  OnGatewayDisconnect,
+  WsException,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from '../chat.service';
 
@@ -13,32 +15,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() 
   server: Server;
 
-  // حقن الـ ChatService لحفظ الرسائل في قاعدة البيانات
+  private readonly logger = new Logger(ChatGateway.name);
+
   constructor(private readonly chatService: ChatService) {}
 
   async handleConnection(client: Socket) {
     try {
-      // استخراج الـ token والـ courseId من الـ handshake query القادم من العميل
       const token = client.handshake.auth?.token || client.handshake.query?.token;
       const courseId = client.handshake.query?.courseId as string;
 
       if (!courseId) {
+        this.logger.warn(`Client ${client.id} disconnected: missing courseId`);
+        client.emit('error', { message: 'courseId is required' });
         client.disconnect();
         return;
       }
 
-      // TODO: قم بوضع منطق التحقق من الـ JWT و الـ CourseEnrollmentGuard هنا باستخدام الـ token المستخرج
-      
-      // إذا نجح التحقق، يتم إدخال العميل إلى غرفة الكورس المحددة
+      if (!token) {
+        this.logger.warn(`Client ${client.id} disconnected: missing token`);
+        client.emit('error', { message: 'Authentication token is required' });
+        client.disconnect();
+        return;
+      }
+
+      // TODO: Verify JWT token and course enrollment here
+      // const payload = this.jwtService.verify(token);
+      // client.data.user = { id: payload.sub, role: payload.role };
+
       await client.join(`course_${courseId}`);
-      console.log(`Client ${client.id} joined room: course_${courseId}`);
+      this.logger.log(`Client ${client.id} joined room: course_${courseId}`);
     } catch (error) {
+      this.logger.error(`Connection error for client ${client.id}:`, error instanceof Error ? error.message : String(error));
+      client.emit('error', { message: 'Connection failed' });
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('sendMessage')
@@ -46,17 +60,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client: Socket,
     payload: { courseId: string; content: string },
   ) {
-    // جلب معرف المستخدم السيرسل من الـ socket (يفضل تخزينه في الـ client أثناء الـ connection بعد فك الـ JWT)
-    const senderId = client.data?.user?.id || 'anonymous_user_id'; 
+    try {
+      // Validate payload
+      if (!payload?.courseId || !payload?.content?.trim()) {
+        client.emit('error', { message: 'courseId and content are required' });
+        return;
+      }
 
-    // 1. حفظ الرسالة في قاعدة البيانات عبر الـ ChatService
-    const savedMessage = await this.chatService.createMessage({
-      courseId: payload.courseId,
-      senderId: senderId,
-      content: payload.content,
-    });
+      const senderId = client.data?.user?.id;
 
-    // 2. بث الرسالة المحفوظة حديثاً إلى جميع المتواجدين في غرفة هذا الكورس المحددة
-    this.server.to(`course_${payload.courseId}`).emit('newMessage', savedMessage);
+      if (!senderId) {
+        client.emit('error', { message: 'Not authenticated' });
+        return;
+      }
+
+      const savedMessage = await this.chatService.createMessage({
+        courseId: payload.courseId,
+        senderId,
+        content: payload.content,
+      });
+
+      this.server.to(`course_${payload.courseId}`).emit('newMessage', savedMessage);
+    } catch (error) {
+      this.logger.error(
+        `Failed to handle message from client ${client.id}:`,
+        error instanceof Error ? error.message : String(error),
+      );
+      client.emit('error', { message: 'Failed to send message' });
+    }
   }
 }

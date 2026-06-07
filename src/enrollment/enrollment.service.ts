@@ -13,13 +13,11 @@ import { UpdateProgressDto } from './dto/update-progress.dto';
 export class EnrollmentService {
   constructor(private prisma: PrismaService) {}
 
-  // Enroll a student into a course, with payment and role checks
   async enrollStudent(
     requestorRole: string,
     courseId: string,
     dto: EnrollStudentDto,
   ) {
-    // 1. Verify course exists, is active
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: { price: true },
@@ -27,13 +25,11 @@ export class EnrollmentService {
     if (!course || !course.isActive)
       throw new NotFoundException('Course not available');
 
-    // 2. Check if student is already enrolled
     const existing = await this.prisma.enrollment.findUnique({
       where: { studentId_courseId: { studentId: dto.studentId, courseId } },
     });
     if (existing) throw new BadRequestException('Student already enrolled');
 
-    // 3. Validate student role (must be STUDENT)
     const student = await this.prisma.user.findUnique({
       where: { id: dto.studentId },
     });
@@ -41,19 +37,18 @@ export class EnrollmentService {
       throw new BadRequestException('User is not a student');
     }
 
-    // 4. Payment validation
     const isPaidCourse = course.price && course.price.amount > 0;
     let enrolledBy: string;
 
     if (isPaidCourse) {
       if (dto.paymentId) {
-        // Verify payment exists and belongs to this student
         const payment = await this.prisma.payment.findUnique({
           where: { id: dto.paymentId },
         });
         if (
           !payment ||
           payment.userId !== dto.studentId ||
+          payment.courseId !== courseId ||   // ✅ extra safety: payment must be for this course
           payment.status !== 'COMPLETED'
         ) {
           throw new BadRequestException('Invalid payment');
@@ -62,7 +57,7 @@ export class EnrollmentService {
       } else if (requestorRole === 'ADMIN') {
         enrolledBy = 'ADMIN';
       } else {
-        throw new ForbiddenException('Payment required');
+        throw new ForbiddenException('Payment required to enroll in this course');
       }
     } else {
       enrolledBy = 'FREE';
@@ -83,7 +78,6 @@ export class EnrollmentService {
     });
   }
 
-  // Unenroll a student
   async unenrollStudent(courseId: string, studentId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { studentId_courseId: { studentId, courseId } },
@@ -93,7 +87,6 @@ export class EnrollmentService {
     return this.prisma.enrollment.delete({ where: { id: enrollment.id } });
   }
 
-  // Get all enrollments for a course (teacher/admin)
   async getCourseEnrollments(
     courseId: string,
     query: { page: number; limit: number },
@@ -113,7 +106,6 @@ export class EnrollmentService {
     return { enrollments, total, page: query.page, limit: query.limit };
   }
 
-  // Get all courses a student is enrolled in (student)
   async getStudentEnrollments(
     studentId: string,
     query: { page: number; limit: number },
@@ -139,15 +131,34 @@ export class EnrollmentService {
     return { enrollments, total, page: query.page, limit: query.limit };
   }
 
-  // Update progress (teacher/admin)
-  async updateProgress(enrollmentId: string, dto: UpdateProgressDto) {
+  // ✅ Fix Bug 2: verify the requestor owns this enrollment before updating
+  async updateProgress(
+    enrollmentId: string,
+    dto: UpdateProgressDto,
+    requestorId: string,
+    requestorRole: string,
+  ) {
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+      include: { course: { select: { teacherId: true } } },
+    });
+
+    if (!enrollment) throw new NotFoundException('Enrollment not found');
+
+    const isOwner = enrollment.studentId === requestorId;
+    const isCourseTeacher = enrollment.course.teacherId === requestorId;
+    const isAdmin = requestorRole === 'ADMIN';
+
+    if (!isOwner && !isCourseTeacher && !isAdmin) {
+      throw new ForbiddenException('You cannot update this enrollment progress');
+    }
+
     return this.prisma.enrollment.update({
       where: { id: enrollmentId },
       data: { progress: dto.progress },
     });
   }
 
-  // Access check – used by guards
   async isEnrolledOrOwner(
     userId: string,
     role: string,
@@ -155,17 +166,14 @@ export class EnrollmentService {
   ): Promise<boolean> {
     if (role === 'ADMIN') return true;
 
-    // Teacher: must own the course
     if (role === 'TEACHER') {
       const course = await this.prisma.course.findUnique({
         where: { id: courseId },
         select: { teacherId: true },
       });
-      if (course && course.teacherId === userId) return true;
-      return false;
+      return !!(course && course.teacherId === userId);
     }
 
-    // Student: must be enrolled
     if (role === 'STUDENT') {
       const enrollment = await this.prisma.enrollment.findUnique({
         where: { studentId_courseId: { studentId: userId, courseId } },

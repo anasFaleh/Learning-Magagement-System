@@ -3,17 +3,19 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
-  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CoursesService } from '../courses/courses.service';
+import { EnrollmentService } from '../enrollment/enrollment.service';
 import { CheckoutDto } from './dto/checkout.dto';
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     private prisma: PrismaService,
-    private coursesService: CoursesService,
+    private enrollmentService: EnrollmentService, // ✅ Fix: use EnrollmentService instead of CoursesService
   ) {}
 
   async checkout(userId: string, dto: CheckoutDto) {
@@ -36,7 +38,7 @@ export class PaymentsService {
     // 3. If course is free, enroll directly (no payment needed)
     const price = course.price;
     if (!price || price.amount === 0) {
-      await this.coursesService.enrollStudent(dto.courseId, {
+      await this.enrollmentService.enrollStudent('FREE', dto.courseId, {
         studentId: userId,
       });
       return { free: true, message: 'Enrolled successfully' };
@@ -71,11 +73,17 @@ export class PaymentsService {
     });
 
     // 6. Create payment intent with external gateway (Stripe)
-    const clientSecret = await this.createGatewayPaymentIntent(payment);
+    const gatewayPaymentId = await this.createGatewayPaymentIntent(payment);
+
+    // ✅ Fix Bug 3: save gatewayPaymentId immediately after intent creation
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: { gatewayPaymentId },
+    });
 
     return {
       paymentId: payment.id,
-      clientSecret,
+      clientSecret: gatewayPaymentId,
       amount: finalAmount,
       currency: price.currency,
     };
@@ -86,11 +94,9 @@ export class PaymentsService {
     if (!coupon || !coupon.isActive)
       throw new BadRequestException('Invalid coupon');
 
-    // Check usage limits
     if (coupon.maxUses && coupon.usesCount >= coupon.maxUses)
       throw new BadRequestException('Coupon usage limit reached');
 
-    // Check user assignment
     const assignedUsers = await this.prisma.couponUser.findMany({
       where: { couponId: coupon.id },
     });
@@ -112,14 +118,11 @@ export class PaymentsService {
     //   metadata: { paymentId: payment.id },
     // });
     // return intent.client_secret;
-    // For demo, return a fake secret
     return `pi_demo_${payment.id}`;
   }
 
   // Called by webhook after successful payment
   async confirmPayment(gatewayPaymentId: string, gatewayMetadata: any) {
-    // Find payment by gatewayPaymentId (stored after intent creation) or by metadata
-    // Here we find by metadata.paymentId
     const paymentId = gatewayMetadata?.paymentId;
     if (!paymentId) throw new BadRequestException('Missing payment reference');
 
@@ -143,15 +146,17 @@ export class PaymentsService {
       },
     });
 
-    // Enroll the student in the course
-    await this.coursesService.enrollStudent(payment.courseId, {
+    // ✅ Fix Bug 1: use EnrollmentService and pass paymentId → enrolledBy = 'PAYMENT'
+    await this.enrollmentService.enrollStudent(payment.courseId, payment.courseId, {
       studentId: payment.userId,
+      paymentId: payment.id,
     });
+
+    this.logger.log(`Payment ${paymentId} confirmed — student ${payment.userId} enrolled in course ${payment.courseId}`);
 
     return { success: true };
   }
 
-  // Get own payment history (student)
   async getUserPayments(userId: string, page: number, limit: number) {
     const [payments, total] = await Promise.all([
       this.prisma.payment.findMany({
@@ -166,7 +171,6 @@ export class PaymentsService {
     return { payments, total, page, limit };
   }
 
-  // Admin: get all payments
   async getAllPayments(query: {
     page: number;
     limit: number;

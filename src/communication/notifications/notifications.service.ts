@@ -1,11 +1,13 @@
 // notifications.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NOTIFICATION_EVENTS } from './events/notification-events';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   // Retrieve user notifications
@@ -45,16 +47,22 @@ export class NotificationsService {
     title: string;
     announcementId: string;
   }) {
-    // Notify all enrolled students and the course teacher
-    const userIds = await this.getCourseMemberUserIds(payload.courseId);
-    await this.createNotifications(
-      userIds,
-      'ANNOUNCEMENT',
-      `New announcement: ${payload.title}`,
-      'A new announcement has been posted.',
-      payload.courseId,
-      payload.announcementId,
-    );
+    try {
+      const userIds = await this.getCourseMemberUserIds(payload.courseId);
+      await this.createNotifications(
+        userIds,
+        'ANNOUNCEMENT',
+        `New announcement: ${payload.title}`,
+        'A new announcement has been posted.',
+        payload.courseId,
+        payload.announcementId,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to create ANNOUNCEMENT notifications for course ${payload.courseId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   @OnEvent(NOTIFICATION_EVENTS.ASSIGNMENT_CREATED)
@@ -63,15 +71,22 @@ export class NotificationsService {
     title: string;
     assignmentId: string;
   }) {
-    const userIds = await this.getCourseMemberUserIds(payload.courseId);
-    await this.createNotifications(
-      userIds,
-      'ASSIGNMENT',
-      `New assignment: ${payload.title}`,
-      'A new assignment has been posted.',
-      payload.courseId,
-      payload.assignmentId,
-    );
+    try {
+      const userIds = await this.getCourseMemberUserIds(payload.courseId);
+      await this.createNotifications(
+        userIds,
+        'ASSIGNMENT',
+        `New assignment: ${payload.title}`,
+        'A new assignment has been posted.',
+        payload.courseId,
+        payload.assignmentId,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to create ASSIGNMENT notifications for course ${payload.courseId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   @OnEvent(NOTIFICATION_EVENTS.CONTENT_CREATED)
@@ -81,15 +96,22 @@ export class NotificationsService {
     entityId: string;
     contentType: string;
   }) {
-    const userIds = await this.getCourseMemberUserIds(payload.courseId);
-    await this.createNotifications(
-      userIds,
-      'CONTENT',
-      `New ${payload.contentType}: ${payload.title}`,
-      `A new ${payload.contentType} has been added to the course.`,
-      payload.courseId,
-      payload.entityId,
-    );
+    try {
+      const userIds = await this.getCourseMemberUserIds(payload.courseId);
+      await this.createNotifications(
+        userIds,
+        'CONTENT',
+        `New ${payload.contentType}: ${payload.title}`,
+        `A new ${payload.contentType} has been added to the course.`,
+        payload.courseId,
+        payload.entityId,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to create CONTENT notifications for course ${payload.courseId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   @OnEvent(NOTIFICATION_EVENTS.ENROLLMENT_CREATED)
@@ -97,19 +119,25 @@ export class NotificationsService {
     courseId: string;
     studentId: string;
   }) {
-    // Notify the course teacher
-    const course = await this.prisma.course.findUnique({
-      where: { id: payload.courseId },
-      select: { teacherId: true, title: true },
-    });
-    if (course) {
-      await this.createNotifications(
-        [course.teacherId],
-        'ENROLLMENT',
-        'New student enrolled',
-        `A student has enrolled in your course "${course.title}".`,
-        payload.courseId,
-        payload.studentId,
+    try {
+      const course = await this.prisma.course.findUnique({
+        where: { id: payload.courseId },
+        select: { teacherId: true, title: true },
+      });
+      if (course) {
+        await this.createNotifications(
+          [course.teacherId],
+          'ENROLLMENT',
+          'New student enrolled',
+          `A student has enrolled in your course "${course.title}".`,
+          payload.courseId,
+          payload.studentId,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to create ENROLLMENT_CREATED notification for course ${payload.courseId}`,
+        error instanceof Error ? error.stack : String(error),
       );
     }
   }
@@ -119,18 +147,25 @@ export class NotificationsService {
     courseId: string;
     studentId: string;
   }) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: payload.courseId },
-      select: { teacherId: true, title: true },
-    });
-    if (course) {
-      await this.createNotifications(
-        [course.teacherId],
-        'ENROLLMENT',
-        'Student unenrolled',
-        `A student has left your course "${course.title}".`,
-        payload.courseId,
-        payload.studentId,
+    try {
+      const course = await this.prisma.course.findUnique({
+        where: { id: payload.courseId },
+        select: { teacherId: true, title: true },
+      });
+      if (course) {
+        await this.createNotifications(
+          [course.teacherId],
+          'ENROLLMENT',
+          'Student unenrolled',
+          `A student has left your course "${course.title}".`,
+          payload.courseId,
+          payload.studentId,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to create ENROLLMENT_DELETED notification for course ${payload.courseId}`,
+        error instanceof Error ? error.stack : String(error),
       );
     }
   }

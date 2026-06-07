@@ -25,11 +25,18 @@ export class CourseOwnershipGuard implements CanActivate {
     if (!paramName) return true;
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user; // from JwtAuthGuard
+    const user = request.user;
     const courseId = request.params[paramName];
 
-    // Admins bypass ownership check
+    // ✅ Fix: guard against missing courseId in params
+    if (!courseId) throw new NotFoundException('Course ID missing from request');
+
     if (user.role === 'ADMIN') return true;
+
+    // ✅ Fix: teachers only — students should not reach ownership-guarded routes
+    if (user.role !== 'TEACHER') {
+      throw new ForbiddenException('Only teachers and admins can manage courses');
+    }
 
     const course = await this.coursesService.findCourseById(courseId);
     if (!course) throw new NotFoundException('Course not found');

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLectureDto, UpdateLectureDto } from './dto/lecture.dto';
@@ -18,7 +19,8 @@ import { SubmitAssignmentDto } from './dto/submit-assignment.dto';
 export class LearningContentService {
   constructor(private prisma: PrismaService) {}
 
-  // Lectures
+  // ─── Lectures ────────────────────────────────────────────────────────────
+
   async getLectures(courseId: string) {
     return this.prisma.lecture.findMany({
       where: { courseId },
@@ -35,25 +37,18 @@ export class LearningContentService {
   }
 
   async createLecture(courseId: string, dto: CreateLectureDto) {
-    const lecture = await this.prisma.lecture.findUnique({
-      where: { title: dto.title, courseId },
+    const existing = await this.prisma.lecture.findUnique({
+      where: { title_courseId: { title: dto.title, courseId } },
     });
-    
-    if (lecture) throw new ConflictException('Lecture title must be unique');
+    if (existing) throw new ConflictException('Lecture title must be unique within this course');
+
     return this.prisma.lecture.create({
-      data: {
-        ...dto,
-        courseId,
-      },
+      data: { ...dto, courseId },
     });
   }
 
-  async updateLecture(
-    courseId: string,
-    lectureId: string,
-    dto: UpdateLectureDto,
-  ) {
-    const lecture = await this.getLectureById(courseId, lectureId);
+  async updateLecture(courseId: string, lectureId: string, dto: UpdateLectureDto) {
+    await this.getLectureById(courseId, lectureId);
     return this.prisma.lecture.update({
       where: { id: lectureId },
       data: dto,
@@ -62,12 +57,11 @@ export class LearningContentService {
 
   async deleteLecture(courseId: string, lectureId: string) {
     await this.getLectureById(courseId, lectureId);
-    return this.prisma.lecture.delete({
-      where: { id: lectureId },
-    });
+    return this.prisma.lecture.delete({ where: { id: lectureId } });
   }
 
-  // Announcements
+  // ─── Announcements ───────────────────────────────────────────────────────
+
   async getAnnouncements(courseId: string) {
     return this.prisma.announcement.findMany({
       where: { courseId },
@@ -76,33 +70,27 @@ export class LearningContentService {
   }
 
   async createAnnouncement(courseId: string, dto: CreateAnnouncementDto) {
-    // حل مشكلة توافق الحقول وتعيين الـ body صراحة من الـ dto
-    const { content, ...rest } = dto as any;
+    const body = (dto as any).content ?? (dto as any).body;
+    if (!body) throw new BadRequestException('Announcement body/content is required');
+
     return this.prisma.announcement.create({
-      data: {
-        title: dto.title,
-        body: content || (dto as any).body,
-        courseId,
-      },
+      data: { title: dto.title, body, courseId },
     });
   }
 
-  async updateAnnouncement(
-    courseId: string,
-    announcementId: string,
-    dto: UpdateAnnouncementDto,
-  ) {
+  async updateAnnouncement(courseId: string, announcementId: string, dto: UpdateAnnouncementDto) {
     const announcement = await this.prisma.announcement.findFirst({
       where: { id: announcementId, courseId },
     });
     if (!announcement) throw new NotFoundException('Announcement not found');
 
-    const { content, ...rest } = dto as any;
+    const body = (dto as any).content ?? (dto as any).body;
+
     return this.prisma.announcement.update({
       where: { id: announcementId },
       data: {
-        title: dto.title,
-        body: content !== undefined ? content : (dto as any).body,
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(body !== undefined && { body }),
       },
     });
   }
@@ -112,13 +100,11 @@ export class LearningContentService {
       where: { id: announcementId, courseId },
     });
     if (!announcement) throw new NotFoundException('Announcement not found');
-
-    return this.prisma.announcement.delete({
-      where: { id: announcementId },
-    });
+    return this.prisma.announcement.delete({ where: { id: announcementId } });
   }
 
-  // Assignments
+  // ─── Assignments ─────────────────────────────────────────────────────────
+
   async getAssignments(courseId: string) {
     return this.prisma.assignment.findMany({
       where: { courseId },
@@ -136,18 +122,11 @@ export class LearningContentService {
 
   async createAssignment(courseId: string, dto: CreateAssignmentDto) {
     return this.prisma.assignment.create({
-      data: {
-        ...dto,
-        courseId,
-      },
+      data: { ...dto, courseId },
     });
   }
 
-  async updateAssignment(
-    courseId: string,
-    assignmentId: string,
-    dto: UpdateAssignmentDto,
-  ) {
+  async updateAssignment(courseId: string, assignmentId: string, dto: UpdateAssignmentDto) {
     await this.getAssignmentById(courseId, assignmentId);
     return this.prisma.assignment.update({
       where: { id: assignmentId },
@@ -157,54 +136,50 @@ export class LearningContentService {
 
   async deleteAssignment(courseId: string, assignmentId: string) {
     await this.getAssignmentById(courseId, assignmentId);
-    return this.prisma.assignment.delete({
-      where: { id: assignmentId },
-    });
+    return this.prisma.assignment.delete({ where: { id: assignmentId } });
   }
 
-  // Submissions
+  // ─── Submissions ─────────────────────────────────────────────────────────
+
   async submitAssignment(
     courseId: string,
     assignmentId: string,
     studentId: string,
     dto: SubmitAssignmentDto,
   ) {
-    await this.getAssignmentById(courseId, assignmentId);
+    const assignment = await this.getAssignmentById(courseId, assignmentId);
 
-    // Check enrollment
+    // ✅ Fix: check dueDate before accepting submission
+    if ((assignment as any).dueDate && new Date() > new Date((assignment as any).dueDate)) {
+      throw new BadRequestException('Submission deadline has passed');
+    }
+
     const enrollment = await this.prisma.enrollment.findUnique({
-      where: {
-        studentId_courseId: { studentId, courseId },
-      },
+      where: { studentId_courseId: { studentId, courseId } },
     });
-    if (!enrollment)
-      throw new ForbiddenException('You are not enrolled in this course');
+    if (!enrollment) throw new ForbiddenException('You are not enrolled in this course');
+
+    // ✅ Fix: prevent duplicate submissions
+    const existing = await this.prisma.submission.findFirst({
+      where: { assignmentId, studentId },
+    });
+    if (existing) throw new ConflictException('You have already submitted this assignment');
 
     return this.prisma.submission.create({
-      data: {
-        ...dto,
-        assignmentId,
-        studentId,
-      },
+      data: { ...dto, assignmentId, studentId },
     });
   }
 
   async getSubmissions(courseId: string, assignmentId: string) {
     await this.getAssignmentById(courseId, assignmentId);
-
     return this.prisma.submission.findMany({
       where: { assignmentId },
       include: {
         student: {
-          select: { 
-            id: true, 
-            email: true, 
-            profile: {
-              select: {
-                firstName: true,
-                lastName: true,
-              }
-            }
+          select: {
+            id: true,
+            email: true,
+            profile: { select: { firstName: true, lastName: true } },
           },
         },
       },
@@ -212,13 +187,8 @@ export class LearningContentService {
     });
   }
 
-  async getStudentSubmission(
-    courseId: string,
-    assignmentId: string,
-    studentId: string,
-  ) {
+  async getStudentSubmission(courseId: string, assignmentId: string, studentId: string) {
     await this.getAssignmentById(courseId, assignmentId);
-
     const submission = await this.prisma.submission.findFirst({
       where: { assignmentId, studentId },
     });
@@ -226,7 +196,8 @@ export class LearningContentService {
     return submission;
   }
 
-  // Quizzes
+  // ─── Quizzes ─────────────────────────────────────────────────────────────
+
   async getQuizzes(courseId: string) {
     return this.prisma.quiz.findMany({
       where: { courseId },
@@ -243,24 +214,20 @@ export class LearningContentService {
   }
 
   async createQuiz(courseId: string, dto: CreateQuizDto) {
-    // تحويل الـ dto إلى any لتخطي التحقق الصارم من الحقول المفقودة
     const rawDto = dto as any;
-    
+    const formUrl = rawDto.formUrl ?? rawDto.questionsUrl;
+
+    // ✅ Fix: validate that formUrl exists
+    if (!formUrl) throw new BadRequestException('formUrl is required');
+
     return this.prisma.quiz.create({
-      data: {
-        title: rawDto.title,
-        formUrl: rawDto.formUrl || rawDto.questionsUrl || '',
-        courseId,
-      },
+      data: { title: rawDto.title, formUrl, courseId },
     });
   }
 
   async updateQuiz(courseId: string, quizId: string, dto: UpdateQuizDto) {
     await this.getQuizById(courseId, quizId);
-    
-    // تحويل الـ dto إلى dynamic object لتفادي قيود النوع الصارمة أثناء التحديث
     const updateData: any = { ...dto };
-
     return this.prisma.quiz.update({
       where: { id: quizId },
       data: updateData,
@@ -269,8 +236,6 @@ export class LearningContentService {
 
   async deleteQuiz(courseId: string, quizId: string) {
     await this.getQuizById(courseId, quizId);
-    return this.prisma.quiz.delete({
-      where: { id: quizId },
-    });
+    return this.prisma.quiz.delete({ where: { id: quizId } });
   }
 }

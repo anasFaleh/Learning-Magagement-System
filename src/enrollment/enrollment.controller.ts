@@ -77,6 +77,7 @@ export class EnrollmentController {
     } as any);
   }
 
+  // ✅ Fix Bug 2: pass user into service so ownership can be verified
   @Patch('enrollments/:id/progress')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update student enrollment progress' })
@@ -89,7 +90,7 @@ export class EnrollmentController {
     @Body() dto: UpdateProgressDto,
     @CurrentUser() user,
   ) {
-    return this.enrollmentService.updateProgress(id, dto);
+    return this.enrollmentService.updateProgress(id, dto, user.userId, user.role);
   }
 
   @Get('my-enrollments')

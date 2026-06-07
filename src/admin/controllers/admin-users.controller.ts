@@ -3,7 +3,6 @@ import {
   Get,
   Patch,
   Param,
-  Body,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +11,7 @@ import { AdminService } from '../admin.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { AdminUserQueryDto } from '../dto/admin-user-query.dto';
 
 @ApiTags('Admin - Users')
@@ -24,22 +24,24 @@ export class AdminUsersController {
 
   @Get()
   @ApiOperation({ summary: 'Get all users (admin only)' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name or email' })
-  @ApiQuery({ name: 'role', required: false, description: 'Filter by user role' })
-  @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Results per page' })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'role', required: false })
+  @ApiQuery({ name: 'isActive', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiResponse({ status: 200, description: 'Users retrieved' })
   getUsers(@Query() query: AdminUserQueryDto) {
     return this.adminService.getUsers(query);
   }
 
   @Patch(':id/activation')
-  @ApiOperation({ summary: 'Set user activation status (admin only)' })
+  @ApiOperation({ summary: 'Toggle user activation status (admin only)' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User activation status updated' })
+  @ApiResponse({ status: 400, description: 'Cannot deactivate your own account' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  setActivation(@Param('id') id: string) {
-    return this.adminService.setUserActiveStatus(id);
+  // ✅ Fix: pass adminId so service can prevent self-deactivation
+  setActivation(@CurrentUser() admin: any, @Param('id') id: string) {
+    return this.adminService.setUserActiveStatus(admin.userId, id);
   }
 }

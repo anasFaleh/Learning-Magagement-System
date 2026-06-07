@@ -7,10 +7,10 @@ import { CouponsController } from './coupons.controller';
 import { AdminPaymentsController } from '../admin/controllers/admin-payments.controller';
 import { PaymentWebhookGuard } from './guards/payment-webhook.guard';
 import { PrismaModule } from '../prisma/prisma.module';
-import { CoursesModule } from '../courses/courses.module'; // to access CoursesService
+import { EnrollmentModule } from '../enrollment/enrollment.module'; // ✅ use EnrollmentModule
 
 @Module({
-  imports: [PrismaModule, CoursesModule],
+  imports: [PrismaModule, EnrollmentModule],
   controllers: [
     PaymentsController,
     WebhooksController,
