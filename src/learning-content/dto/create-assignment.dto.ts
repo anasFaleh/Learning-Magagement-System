@@ -12,7 +12,8 @@ export class CreateAssignmentDto {
 
   @ApiProperty({
     description: 'Detailed description of assignment requirements',
-    example: 'Create a todo application using HTML, CSS, and JavaScript with add, delete, and mark complete features',
+    example:
+      'Create a todo application using HTML, CSS, and JavaScript with add, delete, and mark complete features',
   })
   @IsString()
   @IsNotEmpty()

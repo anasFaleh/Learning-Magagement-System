@@ -12,7 +12,8 @@ export class CreateLectureDto {
 
   @ApiPropertyOptional({
     description: 'Detailed description of lecture content',
-    example: 'This lecture covers the basics of JavaScript including variables, functions, and scope',
+    example:
+      'This lecture covers the basics of JavaScript including variables, functions, and scope',
   })
   @IsString()
   @IsOptional()

@@ -15,10 +15,10 @@ enum UserRole {
   STUDENT
 }
 
-enum PaymentStatus {
+enum EnrollmentRequestStatus {
   PENDING
-  COMPLETED
-  FAILED
+  APPROVED
+  REJECTED
 }
 
 // --------------------- User & Profile ---------------------
@@ -36,14 +36,13 @@ model User {
 
   profile       Profile?
 
-  coursesOwned  Course[]        @relation("CourseTeacher")
-  enrollments   Enrollment[]
-  payments      Payment[]
-  notifications Notification[]
-  messages      Message[]
-  submissions   Submission[]
-  auditLogs     AuditLog[]
-  couponUsers   CouponUser[]
+  coursesOwned        Course[]             @relation("CourseTeacher")
+  enrollments         Enrollment[]
+  enrollmentRequests  EnrollmentRequest[]
+  notifications       Notification[]
+  messages            Message[]
+  submissions         Submission[]
+  auditLogs           AuditLog[]
 
   @@index([deletedAt])
 }
@@ -51,66 +50,73 @@ model User {
 // --------------------- Profile ---------------------
 
 model Profile {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   firstName String?
   lastName  String?
   avatarUrl String?
-  userId    String @unique
-  user      User   @relation(fields: [userId], references: [id])
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id])
 }
 
 // --------------------- Courses ---------------------
 
 model Course {
-  id          String   @id @default(cuid())
-  title       String @unique
+  id          String    @id @default(cuid())
+  title       String    @unique
   description String?
   teacherId   String
-  teacher     User     @relation("CourseTeacher", fields: [teacherId], references: [id])
-  isActive    Boolean  @default(true)
+  teacher     User      @relation("CourseTeacher", fields: [teacherId], references: [id])
+  isActive    Boolean   @default(true)
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  price         CoursePrice?
-  enrollments   Enrollment[]
-  lectures      Lecture[]
-  assignments   Assignment[]
-  quizzes       Quiz[]
-  announcements Announcement[]
-  messages      Message[]
-  payments      Payment[]
+  enrollments         Enrollment[]
+  enrollmentRequests  EnrollmentRequest[]
+  lectures            Lecture[]
+  assignments         Assignment[]
+  quizzes             Quiz[]
+  announcements       Announcement[]
+  messages            Message[]
 
   @@index([teacherId])
   @@index([deletedAt])
 }
 
-// --------------------- Course Price ---------------------
+// --------------------- Enrollment Request ---------------------
 
-model CoursePrice {
-  id       String @id @default(cuid())
-  courseId String @unique
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  amount   Int
-  currency String @default("usd")
+model EnrollmentRequest {
+  id        String                  @id @default(cuid())
+  studentId String
+  courseId  String
+
+  student   User    @relation(fields: [studentId], references: [id])
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  status    EnrollmentRequestStatus @default(PENDING)
+  message   String?                 // Optional note from student
+  note      String?                 // Optional note from teacher when rejecting
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, courseId])
+  @@index([courseId, status])
+  @@index([studentId])
 }
 
 // --------------------- Enrollments ---------------------
 
 model Enrollment {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   studentId  String
   courseId   String
 
-  student    User   @relation(fields: [studentId], references: [id])
-  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student    User     @relation(fields: [studentId], references: [id])
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  // ✅ FIX: enforce 1–1 relation with Payment
-  paymentId  String? @unique
-  payment    Payment? @relation(fields: [paymentId], references: [id])
-
-  progress   Float @default(0)
-  enrolledBy String?
+  progress   Float    @default(0)
+  enrolledBy String?  // 'REQUEST', 'ADMIN', 'FREE'
   createdAt  DateTime @default(now())
 
   @@unique([studentId, courseId])
@@ -118,75 +124,12 @@ model Enrollment {
   @@index([courseId])
 }
 
-// --------------------- Payments & Coupons ---------------------
-
-model Payment {
-  id               String        @id @default(cuid())
-  userId           String
-  user             User          @relation(fields: [userId], references: [id])
-
-  courseId         String
-  course           Course        @relation(fields: [courseId], references: [id])
-
-  amount           Int
-  currency         String        @default("usd")
-  discountAmount   Int           @default(0)
-  finalAmount      Int
-
-  couponId         String?
-  coupon           Coupon?       @relation(fields: [couponId], references: [id])
-
-  status           PaymentStatus @default(PENDING)
-  gatewayPaymentId String?
-  gatewayMetadata  Json?
-
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  enrollment       Enrollment?
-
-  @@index([userId])
-  @@index([courseId])
-  @@index([status])
-}
-
-// --------------------- Coupons ---------------------
-
-model Coupon {
-  id                 String   @id @default(cuid())
-  title              String
-  code               String   @unique
-  discountPercentage Int
-  description        String?
-  isActive           Boolean  @default(true)
-  maxUses            Int?
-  usesCount          Int      @default(0)
-  createdAt          DateTime @default(now())
-
-  assignedUsers      CouponUser[]
-  payments           Payment[]
-}
-
-// --------------------- Coupon User ---------------------
-
-model CouponUser {
-  id       String @id @default(cuid())
-
-  couponId String
-  coupon   Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
-
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([couponId, userId])
-}
-
 // --------------------- Learning Content ---------------------
 
 model Lecture {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   courseId    String
-  course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   title       String   @unique
   description String?
@@ -200,16 +143,16 @@ model Lecture {
 }
 
 model Assignment {
-  id          String @id @default(cuid())
+  id          String    @id @default(cuid())
   courseId    String
-  course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   title       String
   description String?
   dueDate     DateTime?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   submissions Submission[]
 
@@ -217,15 +160,15 @@ model Assignment {
 }
 
 model Submission {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   assignmentId String
   assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
   studentId    String
-  student      User @relation(fields: [studentId], references: [id])
+  student      User       @relation(fields: [studentId], references: [id])
 
   fileUrl      String
-  submittedAt  DateTime @default(now())
+  submittedAt  DateTime   @default(now())
 
   @@unique([assignmentId, studentId])
   @@index([assignmentId])
@@ -233,9 +176,9 @@ model Submission {
 }
 
 model Quiz {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   courseId  String
-  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   title     String
   formUrl   String
@@ -247,9 +190,9 @@ model Quiz {
 }
 
 model Announcement {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   courseId  String
-  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   title     String
   body      String
@@ -263,12 +206,12 @@ model Announcement {
 // --------------------- Communication ---------------------
 
 model Message {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   courseId  String
-  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   senderId  String
-  sender    User @relation(fields: [senderId], references: [id])
+  sender    User     @relation(fields: [senderId], references: [id])
 
   content   String
   createdAt DateTime @default(now())
@@ -277,14 +220,14 @@ model Message {
 }
 
 model Notification {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type      String
   title     String
   body      String
-  isRead    Boolean @default(false)
+  isRead    Boolean  @default(false)
 
   courseId  String?
   entityId  String?
@@ -297,9 +240,9 @@ model Notification {
 // --------------------- Audit Logs ---------------------
 
 model AuditLog {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   adminId    String
-  admin      User @relation(fields: [adminId], references: [id])
+  admin      User     @relation(fields: [adminId], references: [id])
 
   action     String
   resource   String?

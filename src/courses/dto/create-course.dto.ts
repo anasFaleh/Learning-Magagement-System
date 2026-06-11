@@ -12,14 +12,16 @@ export class CreateCourseDto {
 
   @ApiPropertyOptional({
     description: 'A detailed description of the course content',
-    example: 'Master advanced JavaScript concepts including async/await, closures, and design patterns',
+    example:
+      'Master advanced JavaScript concepts including async/await, closures, and design patterns',
   })
   @IsString()
   @IsOptional()
   description?: string;
 
   @ApiPropertyOptional({
-    description: 'ID of the teacher to assign to the course (optional for teachers, required for admins)',
+    description:
+      'ID of the teacher to assign to the course (optional for teachers, required for admins)',
     example: 'teacher-123',
   })
   @IsString()

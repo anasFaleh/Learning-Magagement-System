@@ -1,4 +1,3 @@
-// strategies/google.strategy.ts
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
@@ -14,16 +13,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     super({
       clientID: config.get<string>('GOOGLE_CLIENT_ID'),
       clientSecret: config.get<string>('GOOGLE_CLIENT_SECRET'),
-      callbackURL: 'http://localhost:3000/auth/google/callback',
+      // ✅ Fix: use env var instead of hardcoded localhost
+      callbackURL: config.get<string>('GOOGLE_CALLBACK_URL'),
       scope: ['email', 'profile'],
     });
-  }
-
-  authorizationParams(options: any): any {
-    return {
-      ...options,
-      redirect_uri: 'http://localhost:3000/auth/google/callback',
-    };
   }
 
   async validate(
@@ -33,12 +26,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ): Promise<any> {
     const { id, name, emails } = profile;
-    const user = await this.authService.findOrCreateGoogleUser({
+    const tokens = await this.authService.findOrCreateGoogleUser({
       googleId: id,
       email: emails[0].value,
-      name: name.givenName + ' ' + name.familyName,
+      name: `${name.givenName} ${name.familyName}`,
     });
-    
-    done(null, user); 
+    done(null, tokens);
   }
 }

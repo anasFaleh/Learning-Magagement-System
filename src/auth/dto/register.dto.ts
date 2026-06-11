@@ -18,7 +18,8 @@ export class RegisterDto {
   email!: string;
 
   @ApiProperty({
-    description: 'A secure password for the account (Must be between 8 and 128 characters)',
+    description:
+      'A secure password for the account (Must be between 8 and 128 characters)',
     example: 'StrongPassword123!',
     minLength: 8,
     maxLength: 128,

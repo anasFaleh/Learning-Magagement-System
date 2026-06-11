@@ -12,7 +12,8 @@ export class CreateAnnouncementDto {
 
   @ApiProperty({
     description: 'Full content of the announcement',
-    example: 'Due to technical issues, the assignment deadline has been extended to next Friday',
+    example:
+      'Due to technical issues, the assignment deadline has been extended to next Friday',
   })
   @IsString()
   @IsNotEmpty()

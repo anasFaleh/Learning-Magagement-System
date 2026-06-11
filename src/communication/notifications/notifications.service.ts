@@ -114,62 +114,6 @@ export class NotificationsService {
     }
   }
 
-  @OnEvent(NOTIFICATION_EVENTS.ENROLLMENT_CREATED)
-  async handleEnrollmentCreated(payload: {
-    courseId: string;
-    studentId: string;
-  }) {
-    try {
-      const course = await this.prisma.course.findUnique({
-        where: { id: payload.courseId },
-        select: { teacherId: true, title: true },
-      });
-      if (course) {
-        await this.createNotifications(
-          [course.teacherId],
-          'ENROLLMENT',
-          'New student enrolled',
-          `A student has enrolled in your course "${course.title}".`,
-          payload.courseId,
-          payload.studentId,
-        );
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to create ENROLLMENT_CREATED notification for course ${payload.courseId}`,
-        error instanceof Error ? error.stack : String(error),
-      );
-    }
-  }
-
-  @OnEvent(NOTIFICATION_EVENTS.ENROLLMENT_DELETED)
-  async handleEnrollmentDeleted(payload: {
-    courseId: string;
-    studentId: string;
-  }) {
-    try {
-      const course = await this.prisma.course.findUnique({
-        where: { id: payload.courseId },
-        select: { teacherId: true, title: true },
-      });
-      if (course) {
-        await this.createNotifications(
-          [course.teacherId],
-          'ENROLLMENT',
-          'Student unenrolled',
-          `A student has left your course "${course.title}".`,
-          payload.courseId,
-          payload.studentId,
-        );
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to create ENROLLMENT_DELETED notification for course ${payload.courseId}`,
-        error instanceof Error ? error.stack : String(error),
-      );
-    }
-  }
-
   // Helpers
   private async getCourseMemberUserIds(courseId: string): Promise<string[]> {
     const course = await this.prisma.course.findUnique({
@@ -202,5 +146,17 @@ export class NotificationsService {
     if (data.length > 0) {
       await this.prisma.notification.createMany({ data });
     }
+  }
+
+  // ✅ Public method for enrollment request notifications
+  async createNotification(data: {
+    userId: string;
+    type: string;
+    title: string;
+    body: string;
+    courseId?: string;
+    entityId?: string;
+  }) {
+    return this.prisma.notification.create({ data });
   }
 }

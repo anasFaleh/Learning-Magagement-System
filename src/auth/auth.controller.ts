@@ -1,4 +1,3 @@
-// auth.controller.ts
 import {
   Controller,
   Post,
@@ -8,35 +7,33 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiBody 
-} from '@nestjs/swagger'; // 👈 Imported Swagger decorators
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { Request, Response } from 'express';
 
-@ApiTags('Authentication') // 👈 Groups all these endpoints under "Authentication" in Swagger UI
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private config: ConfigService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiResponse({ status: 201, description: 'User successfully created.' })
-  @ApiResponse({ status: 400, description: 'Bad Request - Validation failed.' })
-  @ApiResponse({ status: 409, description: 'Conflict - Email already exists.' })
-  async register(@Body() dto: RegisterDto) {
+  @ApiResponse({ status: 400, description: 'Validation failed.' })
+  @ApiResponse({ status: 409, description: 'Email already exists.' })
+  register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
   @ApiOperation({ summary: 'Authenticate user and return JWT tokens' })
   @ApiResponse({ status: 200, description: 'Login successful.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid credentials.' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials.' })
   async login(@Body() dto: LoginDto) {
     const user = await this.authService.validateUser(dto.email, dto.password);
     return this.authService.login(user);
@@ -45,39 +42,33 @@ export class AuthController {
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Initiate Google OAuth2 authentication flow' })
-  googleAuth() {
-    // initiates Google OAuth flow
-  }
+  googleAuth() {}
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth2 callback redirect' })
-  googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    
-
-    const user = req.user as any;
-    
-    const accessToken = user.accessToken || user.tokens?.accessToken;
-    const refreshToken = user.refreshToken || user.tokens?.refreshToken;
-
-    res.redirect(
-      `${process.env.FRONTEND_URL}/oauth?accessToken=${accessToken}&refreshToken=${refreshToken}`,
+  googleAuthRedirect(@Req() req: any, @Res() res: any) {
+    const tokens = req.user as { accessToken: string; refreshToken: string };
+    // ✅ Fix: use ConfigService instead of process.env
+    const frontendUrl = this.config.get<string>('FRONTEND_URL');
+    return res.redirect(
+      `${frontendUrl}/oauth?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
     );
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: 'Generate a new Access Token using a Refresh Token' })
-  @ApiBody({ 
-    schema: { 
-      type: 'object', 
-      properties: { 
-        refreshToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' } 
-      } 
-    } 
+  @ApiOperation({ summary: 'Get new access token using refresh token' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        refreshToken: { type: 'string', example: 'eyJhbGci...' },
+      },
+    },
   })
-  @ApiResponse({ status: 200, description: 'New access token generated successfully.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid refresh token.' })
-  async refresh(@Body('refreshToken') refreshToken: string) {
+  @ApiResponse({ status: 200, description: 'New access token generated.' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token.' })
+  refresh(@Body('refreshToken') refreshToken: string) {
     return this.authService.refreshAccessToken(refreshToken);
   }
 }

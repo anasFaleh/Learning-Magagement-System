@@ -8,7 +8,13 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { LearningContentService } from '../learning-content.service';
 import { CreateLectureDto } from '../dto/create-lecture.dto';
 import { UpdateLectureDto } from '../dto/update-lecture.dto';
@@ -30,7 +36,10 @@ export class LecturesController {
   @ApiOperation({ summary: 'Get all lectures in a course' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiResponse({ status: 200, description: 'Lectures retrieved successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Not enrolled in course' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not enrolled in course',
+  })
   @ApiResponse({ status: 404, description: 'Course not found' })
   getLectures(@Param('courseId') courseId: string) {
     return this.contentService.getLectures(courseId);
@@ -43,7 +52,10 @@ export class LecturesController {
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'lectureId', description: 'Lecture ID' })
   @ApiResponse({ status: 200, description: 'Lecture retrieved' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Not enrolled in course' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not enrolled in course',
+  })
   @ApiResponse({ status: 404, description: 'Lecture not found' })
   getLecture(
     @Param('courseId') courseId: string,
@@ -58,8 +70,14 @@ export class LecturesController {
   @ApiOperation({ summary: 'Create a new lecture (teacher/admin only)' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiResponse({ status: 201, description: 'Lecture created successfully' })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid lecture data' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid lecture data',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not course owner or admin',
+  })
   createLecture(
     @Param('courseId') courseId: string,
     @Body() dto: CreateLectureDto,
@@ -74,7 +92,10 @@ export class LecturesController {
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'lectureId', description: 'Lecture ID' })
   @ApiResponse({ status: 200, description: 'Lecture updated successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not course owner or admin',
+  })
   @ApiResponse({ status: 404, description: 'Lecture not found' })
   updateLecture(
     @Param('courseId') courseId: string,
@@ -91,7 +112,10 @@ export class LecturesController {
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'lectureId', description: 'Lecture ID' })
   @ApiResponse({ status: 200, description: 'Lecture deleted successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not course owner or admin',
+  })
   @ApiResponse({ status: 404, description: 'Lecture not found' })
   deleteLecture(
     @Param('courseId') courseId: string,

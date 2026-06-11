@@ -38,16 +38,20 @@ export class LearningContentService {
 
   async createLecture(courseId: string, dto: CreateLectureDto) {
     const existing = await this.prisma.lecture.findUnique({
-      where: { title_courseId: { title: dto.title, courseId } },
+      where: { title: dto.title },
     });
-    if (existing) throw new ConflictException('Lecture title must be unique within this course');
+    if (existing) throw new ConflictException('Lecture title must be unique');
 
     return this.prisma.lecture.create({
       data: { ...dto, courseId },
     });
   }
 
-  async updateLecture(courseId: string, lectureId: string, dto: UpdateLectureDto) {
+  async updateLecture(
+    courseId: string,
+    lectureId: string,
+    dto: UpdateLectureDto,
+  ) {
     await this.getLectureById(courseId, lectureId);
     return this.prisma.lecture.update({
       where: { id: lectureId },
@@ -71,14 +75,19 @@ export class LearningContentService {
 
   async createAnnouncement(courseId: string, dto: CreateAnnouncementDto) {
     const body = (dto as any).content ?? (dto as any).body;
-    if (!body) throw new BadRequestException('Announcement body/content is required');
+    if (!body)
+      throw new BadRequestException('Announcement body/content is required');
 
     return this.prisma.announcement.create({
       data: { title: dto.title, body, courseId },
     });
   }
 
-  async updateAnnouncement(courseId: string, announcementId: string, dto: UpdateAnnouncementDto) {
+  async updateAnnouncement(
+    courseId: string,
+    announcementId: string,
+    dto: UpdateAnnouncementDto,
+  ) {
     const announcement = await this.prisma.announcement.findFirst({
       where: { id: announcementId, courseId },
     });
@@ -126,7 +135,11 @@ export class LearningContentService {
     });
   }
 
-  async updateAssignment(courseId: string, assignmentId: string, dto: UpdateAssignmentDto) {
+  async updateAssignment(
+    courseId: string,
+    assignmentId: string,
+    dto: UpdateAssignmentDto,
+  ) {
     await this.getAssignmentById(courseId, assignmentId);
     return this.prisma.assignment.update({
       where: { id: assignmentId },
@@ -150,20 +163,25 @@ export class LearningContentService {
     const assignment = await this.getAssignmentById(courseId, assignmentId);
 
     // ✅ Fix: check dueDate before accepting submission
-    if ((assignment as any).dueDate && new Date() > new Date((assignment as any).dueDate)) {
+    if (
+      (assignment as any).dueDate &&
+      new Date() > new Date((assignment as any).dueDate)
+    ) {
       throw new BadRequestException('Submission deadline has passed');
     }
 
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { studentId_courseId: { studentId, courseId } },
     });
-    if (!enrollment) throw new ForbiddenException('You are not enrolled in this course');
+    if (!enrollment)
+      throw new ForbiddenException('You are not enrolled in this course');
 
     // ✅ Fix: prevent duplicate submissions
     const existing = await this.prisma.submission.findFirst({
       where: { assignmentId, studentId },
     });
-    if (existing) throw new ConflictException('You have already submitted this assignment');
+    if (existing)
+      throw new ConflictException('You have already submitted this assignment');
 
     return this.prisma.submission.create({
       data: { ...dto, assignmentId, studentId },
@@ -187,7 +205,11 @@ export class LearningContentService {
     });
   }
 
-  async getStudentSubmission(courseId: string, assignmentId: string, studentId: string) {
+  async getStudentSubmission(
+    courseId: string,
+    assignmentId: string,
+    studentId: string,
+  ) {
     await this.getAssignmentById(courseId, assignmentId);
     const submission = await this.prisma.submission.findFirst({
       where: { assignmentId, studentId },

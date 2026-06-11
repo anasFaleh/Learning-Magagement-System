@@ -1,5 +1,8 @@
-// admin.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -7,29 +10,25 @@ export class AdminService {
   constructor(private prisma: PrismaService) {}
 
   async getSystemStats(_query: any) {
-    const [userCount, courseCount, enrollmentCount, revenue] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.course.count(),
-      this.prisma.enrollment.count(),
-      // ✅ Fix: include basic revenue stat
-      this.prisma.payment.aggregate({
-        where: { status: 'COMPLETED' },
-        _sum: { finalAmount: true },
-      }),
-    ]);
+    const [userCount, courseCount, enrollmentCount, pendingRequestCount] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.course.count(),
+        this.prisma.enrollment.count(),
+        this.prisma.enrollmentRequest.count({ where: { status: 'PENDING' } }),
+      ]);
 
     return {
       users: userCount,
       courses: courseCount,
       enrollments: enrollmentCount,
-      totalRevenue: revenue._sum.finalAmount ?? 0,
+      pendingEnrollmentRequests: pendingRequestCount,
       timestamp: new Date().toISOString(),
     };
   }
 
   async getUsers(query: any) {
     const page = Math.max(Number(query.page ?? 1), 1);
-    // ✅ Fix: clamp limit to prevent abuse
     const limit = Math.min(Number(query.limit ?? 20), 100);
     const search = query.search || '';
     const role = query.role || null;
@@ -39,8 +38,16 @@ export class AdminService {
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
-        { profile: { is: { firstName: { contains: search, mode: 'insensitive' } } } },
-        { profile: { is: { lastName: { contains: search, mode: 'insensitive' } } } },
+        {
+          profile: {
+            is: { firstName: { contains: search, mode: 'insensitive' } },
+          },
+        },
+        {
+          profile: {
+            is: { lastName: { contains: search, mode: 'insensitive' } },
+          },
+        },
       ];
     }
     if (role) where.role = role;
@@ -56,7 +63,9 @@ export class AdminService {
           role: true,
           isActive: true,
           createdAt: true,
-          profile: { select: { firstName: true, lastName: true, avatarUrl: true } },
+          profile: {
+            select: { firstName: true, lastName: true, avatarUrl: true },
+          },
         },
       }),
       this.prisma.user.count({ where }),
@@ -66,7 +75,6 @@ export class AdminService {
   }
 
   async setUserActiveStatus(adminId: string, userId: string) {
-    // ✅ Fix: prevent admin from deactivating themselves
     if (adminId === userId) {
       throw new BadRequestException('You cannot deactivate your own account');
     }
@@ -122,17 +130,31 @@ export class AdminService {
       this.prisma.course.count({ where }),
     ]);
 
-    return { data: courses, total, page, limit, pages: Math.ceil(total / limit) };
+    return {
+      data: courses,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    };
   }
 
   async setCourseActiveStatus(courseId: string) {
-    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+    });
     if (!course) throw new NotFoundException('Course not found');
 
     return this.prisma.course.update({
       where: { id: courseId },
       data: { isActive: !course.isActive },
-      select: { id: true, title: true, description: true, isActive: true, createdAt: true },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
   }
 }

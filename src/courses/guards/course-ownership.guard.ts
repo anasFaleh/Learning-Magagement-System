@@ -29,13 +29,16 @@ export class CourseOwnershipGuard implements CanActivate {
     const courseId = request.params[paramName];
 
     // ✅ Fix: guard against missing courseId in params
-    if (!courseId) throw new NotFoundException('Course ID missing from request');
+    if (!courseId)
+      throw new NotFoundException('Course ID missing from request');
 
     if (user.role === 'ADMIN') return true;
 
     // ✅ Fix: teachers only — students should not reach ownership-guarded routes
     if (user.role !== 'TEACHER') {
-      throw new ForbiddenException('Only teachers and admins can manage courses');
+      throw new ForbiddenException(
+        'Only teachers and admins can manage courses',
+      );
     }
 
     const course = await this.coursesService.findCourseById(courseId);

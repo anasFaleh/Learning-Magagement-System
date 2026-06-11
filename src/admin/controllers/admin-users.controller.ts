@@ -6,7 +6,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { AdminService } from '../admin.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -38,7 +45,10 @@ export class AdminUsersController {
   @ApiOperation({ summary: 'Toggle user activation status (admin only)' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User activation status updated' })
-  @ApiResponse({ status: 400, description: 'Cannot deactivate your own account' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot deactivate your own account',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   // ✅ Fix: pass adminId so service can prevent self-deactivation
   setActivation(@CurrentUser() admin: any, @Param('id') id: string) {
