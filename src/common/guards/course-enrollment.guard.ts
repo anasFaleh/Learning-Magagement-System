@@ -37,9 +37,7 @@ export class CourseEnrollmentGuard implements CanActivate {
     // 2. إذا كان المستخدم مِدرساً، نتحقق أنه هو صاحب هذا الكورس
     if (user.role === 'TEACHER') {
       if (course.teacherId !== user.userId) {
-        throw new ForbiddenException(
-          'You are not the assigned teacher for this course',
-        );
+        throw new ForbiddenException('You are not the assigned teacher for this course');
       }
       return true;
     }

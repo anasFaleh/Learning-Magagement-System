@@ -29,7 +29,7 @@ export class CoursesService {
     const courseWithSameTitle = await this.prisma.course.findUnique({
       where: { title: dto.title },
     });
-
+    
     if (courseWithSameTitle) {
       throw new ConflictException('Course title must be unique');
     }
@@ -185,7 +185,7 @@ export class CoursesService {
 
     return { courses, total, page, limit };
   }
-
+  
   // Get courses the current student is enrolled in (student‑only)
   async getEnrolledCourses(
     userId: string,

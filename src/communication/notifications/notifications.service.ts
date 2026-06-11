@@ -114,6 +114,7 @@ export class NotificationsService {
     }
   }
 
+
   // Helpers
   private async getCourseMemberUserIds(courseId: string): Promise<string[]> {
     const course = await this.prisma.course.findUnique({

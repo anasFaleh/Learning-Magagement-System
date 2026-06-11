@@ -8,11 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, of, tap } from 'rxjs';
-import {
-  CACHE_KEY,
-  CACHE_TTL,
-  CACHE_INVALIDATE,
-} from '../decorators/cache.decorator';
+import { CACHE_KEY, CACHE_TTL, CACHE_INVALIDATE } from '../decorators/cache.decorator';
 
 // In-memory cache store — replace with Redis adapter in production
 // Map<cacheKey, { data, expiresAt }>
@@ -83,9 +79,7 @@ export class CacheInterceptor implements NestInterceptor {
       }
     }
     if (count > 0) {
-      this.logger.debug(
-        `Cache INVALIDATED ${count} entries for groups: ${groups.join(', ')}`,
-      );
+      this.logger.debug(`Cache INVALIDATED ${count} entries for groups: ${groups.join(', ')}`);
     }
   }
 }

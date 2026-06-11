@@ -12,8 +12,7 @@ export class UpdateAnnouncementDto {
 
   @ApiPropertyOptional({
     description: 'Updated announcement content',
-    example:
-      'Due to technical issues, the assignment deadline has been extended to next Friday',
+    example: 'Due to technical issues, the assignment deadline has been extended to next Friday',
   })
   @IsOptional()
   @IsString()

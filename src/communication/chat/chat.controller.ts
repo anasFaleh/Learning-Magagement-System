@@ -7,14 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { MessageQueryDto } from './dto/message-query.dto';
@@ -38,10 +31,7 @@ export class ChatController {
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Results per page' })
   @ApiResponse({ status: 200, description: 'Messages retrieved' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not enrolled in course',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not enrolled in course' })
   getMessages(
     @Param('courseId') courseId: string,
     @Query() query: MessageQueryDto,
@@ -55,10 +45,7 @@ export class ChatController {
   @ApiOperation({ summary: 'Send a message to course chat' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiResponse({ status: 201, description: 'Message sent successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not enrolled in course',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not enrolled in course' })
   @ApiResponse({ status: 404, description: 'Course not found' })
   sendMessage(
     @Param('courseId') courseId: string,

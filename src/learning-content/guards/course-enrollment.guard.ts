@@ -48,7 +48,9 @@ export class CourseEnrollmentGuard implements CanActivate {
         },
       });
       if (!enrollment)
-        throw new ForbiddenException('You are not enrolled in this course');
+        throw new ForbiddenException(
+          'You are not enrolled in this course',
+        );
       return true;
     }
 

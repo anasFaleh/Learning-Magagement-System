@@ -7,16 +7,11 @@ export enum ReviewAction {
 }
 
 export class ReviewEnrollmentRequestDto {
-  @ApiProperty({
-    enum: ReviewAction,
-    description: 'APPROVE or REJECT the request',
-  })
+  @ApiProperty({ enum: ReviewAction, description: 'APPROVE or REJECT the request' })
   @IsEnum(ReviewAction)
   action: ReviewAction;
 
-  @ApiPropertyOptional({
-    description: 'Optional note (e.g. reason for rejection)',
-  })
+  @ApiPropertyOptional({ description: 'Optional note (e.g. reason for rejection)' })
   @IsOptional()
   @IsString()
   @MaxLength(500)

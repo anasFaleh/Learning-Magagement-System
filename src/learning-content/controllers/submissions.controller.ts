@@ -7,13 +7,7 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { LearningContentService } from '../learning-content.service';
 import { SubmitAssignmentDto } from '../dto/submit-assignment.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -35,14 +29,8 @@ export class SubmissionsController {
   @ApiOperation({ summary: 'Submit assignment (students only)' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
-  @ApiResponse({
-    status: 201,
-    description: 'Assignment submitted successfully',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Only students can submit',
-  })
+  @ApiResponse({ status: 201, description: 'Assignment submitted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only students can submit' })
   @ApiResponse({ status: 404, description: 'Assignment not found' })
   submit(
     @Param('courseId') courseId: string,
@@ -63,16 +51,11 @@ export class SubmissionsController {
   @Get('submissions')
   @UseGuards(JwtAuthGuard, CourseOwnershipGuard)
   @RequireCourseOwnership('courseId')
-  @ApiOperation({
-    summary: 'Get all submissions for assignment (teacher/admin only)',
-  })
+  @ApiOperation({ summary: 'Get all submissions for assignment (teacher/admin only)' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'assignmentId', description: 'Assignment ID' })
   @ApiResponse({ status: 200, description: 'Submissions retrieved' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not course owner or admin',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
   getSubmissions(
     @Param('courseId') courseId: string,
     @Param('assignmentId') assignmentId: string,

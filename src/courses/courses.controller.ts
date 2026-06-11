@@ -9,14 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -29,10 +22,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequireCourseOwnership } from './decorators/require-course-ownership.decorator';
 import { CourseOwnershipGuard } from './guards/course-ownership.guard';
 import { UserRole } from '@prisma/client';
-import {
-  Cacheable,
-  InvalidatesCache,
-} from '../common/decorators/cache.decorator';
+import { Cacheable, InvalidatesCache } from '../common/decorators/cache.decorator';
 
 @ApiTags('Courses')
 @ApiBearerAuth('JWT-auth')

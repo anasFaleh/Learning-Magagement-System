@@ -8,13 +8,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { LearningContentService } from '../learning-content.service';
 import { CreateAnnouncementDto } from '../dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from '../dto/update-announcement.dto';
@@ -49,14 +43,8 @@ export class AnnouncementsController {
   @RequireCourseOwnership('courseId')
   @ApiOperation({ summary: 'Create a new announcement (teacher/admin only)' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
-  @ApiResponse({
-    status: 201,
-    description: 'Announcement created successfully',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not course owner or admin',
-  })
+  @ApiResponse({ status: 201, description: 'Announcement created successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
   async create(
     @Param('courseId') courseId: string,
     @Body() createDto: CreateAnnouncementDto,
@@ -71,14 +59,8 @@ export class AnnouncementsController {
   @ApiOperation({ summary: 'Update an announcement (teacher/admin only)' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'announcementId', description: 'Announcement ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Announcement updated successfully',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not course owner or admin',
-  })
+  @ApiResponse({ status: 200, description: 'Announcement updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
   @ApiResponse({ status: 404, description: 'Announcement not found' })
   async update(
     @Param('courseId') courseId: string,
@@ -99,14 +81,8 @@ export class AnnouncementsController {
   @ApiOperation({ summary: 'Delete an announcement (teacher/admin only)' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'announcementId', description: 'Announcement ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Announcement deleted successfully',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not course owner or admin',
-  })
+  @ApiResponse({ status: 200, description: 'Announcement deleted successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not course owner or admin' })
   @ApiResponse({ status: 404, description: 'Announcement not found' })
   async remove(
     @Param('courseId') courseId: string,

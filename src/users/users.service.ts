@@ -17,13 +17,7 @@ export class UsersService {
   async getMyProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true,
-        profile: true,
-      },
+      select: { id: true, email: true, role: true, isActive: true, profile: true },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;
@@ -35,13 +29,7 @@ export class UsersService {
   ) {
     const user = await this.prisma.user.findUnique({
       where: { id: targetId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true,
-        profile: true,
-      },
+      select: { id: true, email: true, role: true, isActive: true, profile: true },
     });
     if (!user) throw new NotFoundException('User not found');
 
@@ -61,20 +49,12 @@ export class UsersService {
     }
 
     // ✅ Fix: check user exists before updating
-    const existing = await this.prisma.user.findUnique({
-      where: { id: targetId },
-    });
+    const existing = await this.prisma.user.findUnique({ where: { id: targetId } });
     if (!existing) throw new NotFoundException('User not found');
 
     // ✅ Fix: if admin changes email, check it's not already taken
-    if (
-      requestor.role === UserRole.ADMIN &&
-      dto.email &&
-      dto.email !== existing.email
-    ) {
-      const taken = await this.prisma.user.findUnique({
-        where: { email: dto.email },
-      });
+    if (requestor.role === UserRole.ADMIN && dto.email && dto.email !== existing.email) {
+      const taken = await this.prisma.user.findUnique({ where: { email: dto.email } });
       if (taken) throw new ConflictException('Email already in use');
     }
 
@@ -94,13 +74,7 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id: targetId },
       data: updateData,
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true,
-        profile: true,
-      },
+      select: { id: true, email: true, role: true, isActive: true, profile: true },
     });
   }
 
@@ -143,13 +117,7 @@ export class UsersService {
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        select: {
-          id: true,
-          email: true,
-          role: true,
-          isActive: true,
-          profile: true,
-        },
+        select: { id: true, email: true, role: true, isActive: true, profile: true },
         skip: (safePage - 1) * safeLimit,
         take: safeLimit,
         orderBy: { createdAt: 'desc' },
@@ -165,8 +133,7 @@ export class UsersService {
       where: { id: userId },
       select: { id: true, isActive: true, role: true },
     });
-    if (!user || !user.isActive)
-      throw new NotFoundException('User not found or inactive');
+    if (!user || !user.isActive) throw new NotFoundException('User not found or inactive');
     return user;
   }
 }

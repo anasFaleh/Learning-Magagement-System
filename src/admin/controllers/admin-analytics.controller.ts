@@ -1,11 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AdminService } from '../admin.service';
 import { AnalyticsQueryDto } from '../dto/analytics-query.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';

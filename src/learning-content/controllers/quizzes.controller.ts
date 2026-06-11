@@ -8,13 +8,7 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { LearningContentService } from '../learning-content.service';
 import { CreateQuizDto } from '../dto/create-quiz.dto';
 import { UpdateQuizDto } from '../dto/update-quiz.dto';
@@ -38,10 +32,7 @@ export class QuizzesController {
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiResponse({ status: 201, description: 'Quiz created successfully' })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid quiz data' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Only teachers and admins can create quizzes',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only teachers and admins can create quizzes' })
   async create(
     @Param('courseId') courseId: string,
     @Body() createQuizDto: CreateQuizDto,
@@ -77,10 +68,7 @@ export class QuizzesController {
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'id', description: 'Quiz ID' })
   @ApiResponse({ status: 200, description: 'Quiz updated successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Only teachers and admins can update quizzes',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only teachers and admins can update quizzes' })
   @ApiResponse({ status: 404, description: 'Quiz not found' })
   async update(
     @Param('courseId') courseId: string,
@@ -96,10 +84,7 @@ export class QuizzesController {
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiParam({ name: 'id', description: 'Quiz ID' })
   @ApiResponse({ status: 200, description: 'Quiz deleted successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Only teachers and admins can delete quizzes',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only teachers and admins can delete quizzes' })
   @ApiResponse({ status: 404, description: 'Quiz not found' })
   async remove(@Param('courseId') courseId: string, @Param('id') id: string) {
     return { message: 'Quiz ' + id + ' deleted successfully' };

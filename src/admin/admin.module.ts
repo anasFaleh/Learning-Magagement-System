@@ -14,7 +14,12 @@ import { EnrollmentModule } from '../enrollment/enrollment.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
-  imports: [PrismaModule, UsersModule, CoursesModule, EnrollmentModule],
+  imports: [
+    PrismaModule,
+    UsersModule,
+    CoursesModule,
+    EnrollmentModule,
+  ],
   controllers: [
     AdminController,
     AdminUsersController,

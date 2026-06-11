@@ -8,10 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProgressDto } from './dto/update-progress.dto';
 import { CreateEnrollmentRequestDto } from './dto/create-enrollment-request.dto';
-import {
-  ReviewEnrollmentRequestDto,
-  ReviewAction,
-} from './dto/review-enrollment-request.dto';
+import { ReviewEnrollmentRequestDto, ReviewAction } from './dto/review-enrollment-request.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EnrollmentRequestStatus } from '@prisma/client';
 
@@ -29,13 +26,7 @@ export class EnrollmentService {
   async requestEnrollment(studentId: string, dto: CreateEnrollmentRequestDto) {
     const course = await this.prisma.course.findUnique({
       where: { id: dto.courseId },
-      select: {
-        id: true,
-        title: true,
-        isActive: true,
-        teacherId: true,
-        deletedAt: true,
-      },
+      select: { id: true, title: true, isActive: true, teacherId: true, deletedAt: true },
     });
 
     if (!course || !course.isActive || course.deletedAt) {
@@ -56,9 +47,7 @@ export class EnrollmentService {
     });
     if (existing) {
       if (existing.status === EnrollmentRequestStatus.PENDING) {
-        throw new ConflictException(
-          'You already have a pending request for this course',
-        );
+        throw new ConflictException('You already have a pending request for this course');
       }
       if (existing.status === EnrollmentRequestStatus.APPROVED) {
         throw new ConflictException('Your request was already approved');
@@ -120,9 +109,7 @@ export class EnrollmentService {
     const isTeacher = request.course.teacherId === reviewerId;
     const isAdmin = reviewerRole === 'ADMIN';
     if (!isTeacher && !isAdmin) {
-      throw new ForbiddenException(
-        'Only the course teacher or admin can review requests',
-      );
+      throw new ForbiddenException('Only the course teacher or admin can review requests');
     }
 
     if (request.status !== EnrollmentRequestStatus.PENDING) {
@@ -218,13 +205,7 @@ export class EnrollmentService {
     return this.prisma.enrollmentRequest.findMany({
       where: { studentId },
       include: {
-        course: {
-          select: {
-            id: true,
-            title: true,
-            teacher: { select: { id: true, email: true } },
-          },
-        },
+        course: { select: { id: true, title: true, teacher: { select: { id: true, email: true } } } },
       },
       orderBy: { updatedAt: 'desc' },
     });
@@ -235,8 +216,7 @@ export class EnrollmentService {
       where: { id: requestId },
     });
     if (!request) throw new NotFoundException('Request not found');
-    if (request.studentId !== studentId)
-      throw new ForbiddenException('Not your request');
+    if (request.studentId !== studentId) throw new ForbiddenException('Not your request');
     if (request.status !== EnrollmentRequestStatus.PENDING) {
       throw new BadRequestException('Can only cancel pending requests');
     }
@@ -256,9 +236,7 @@ export class EnrollmentService {
       throw new NotFoundException('Course not available');
     }
 
-    const student = await this.prisma.user.findUnique({
-      where: { id: studentId },
-    });
+    const student = await this.prisma.user.findUnique({ where: { id: studentId } });
     if (!student || student.role !== 'STUDENT') {
       throw new BadRequestException('User is not a student');
     }
@@ -289,16 +267,11 @@ export class EnrollmentService {
   // QUERIES
   // ─────────────────────────────────────────────
 
-  async getCourseEnrollments(
-    courseId: string,
-    query: { page: number; limit: number },
-  ) {
+  async getCourseEnrollments(courseId: string, query: { page: number; limit: number }) {
     const [enrollments, total] = await Promise.all([
       this.prisma.enrollment.findMany({
         where: { courseId },
-        include: {
-          student: { select: { id: true, email: true, profile: true } },
-        },
+        include: { student: { select: { id: true, email: true, profile: true } } },
         skip: (query.page - 1) * query.limit,
         take: query.limit,
         orderBy: { createdAt: 'desc' },
@@ -308,10 +281,7 @@ export class EnrollmentService {
     return { enrollments, total, page: query.page, limit: query.limit };
   }
 
-  async getStudentEnrollments(
-    studentId: string,
-    query: { page: number; limit: number },
-  ) {
+  async getStudentEnrollments(studentId: string, query: { page: number; limit: number }) {
     const [enrollments, total] = await Promise.all([
       this.prisma.enrollment.findMany({
         where: { studentId },
@@ -351,9 +321,7 @@ export class EnrollmentService {
     const isAdmin = requestorRole === 'ADMIN';
 
     if (!isOwner && !isCourseTeacher && !isAdmin) {
-      throw new ForbiddenException(
-        'You cannot update this enrollment progress',
-      );
+      throw new ForbiddenException('You cannot update this enrollment progress');
     }
 
     return this.prisma.enrollment.update({
@@ -362,11 +330,7 @@ export class EnrollmentService {
     });
   }
 
-  async isEnrolledOrOwner(
-    userId: string,
-    role: string,
-    courseId: string,
-  ): Promise<boolean> {
+  async isEnrolledOrOwner(userId: string, role: string, courseId: string): Promise<boolean> {
     if (role === 'ADMIN') return true;
 
     if (role === 'TEACHER') {

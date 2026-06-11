@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -10,13 +6,12 @@ export class AdminService {
   constructor(private prisma: PrismaService) {}
 
   async getSystemStats(_query: any) {
-    const [userCount, courseCount, enrollmentCount, pendingRequestCount] =
-      await Promise.all([
-        this.prisma.user.count(),
-        this.prisma.course.count(),
-        this.prisma.enrollment.count(),
-        this.prisma.enrollmentRequest.count({ where: { status: 'PENDING' } }),
-      ]);
+    const [userCount, courseCount, enrollmentCount, pendingRequestCount] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.course.count(),
+      this.prisma.enrollment.count(),
+      this.prisma.enrollmentRequest.count({ where: { status: 'PENDING' } }),
+    ]);
 
     return {
       users: userCount,
@@ -38,16 +33,8 @@ export class AdminService {
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
-        {
-          profile: {
-            is: { firstName: { contains: search, mode: 'insensitive' } },
-          },
-        },
-        {
-          profile: {
-            is: { lastName: { contains: search, mode: 'insensitive' } },
-          },
-        },
+        { profile: { is: { firstName: { contains: search, mode: 'insensitive' } } } },
+        { profile: { is: { lastName: { contains: search, mode: 'insensitive' } } } },
       ];
     }
     if (role) where.role = role;
@@ -63,9 +50,7 @@ export class AdminService {
           role: true,
           isActive: true,
           createdAt: true,
-          profile: {
-            select: { firstName: true, lastName: true, avatarUrl: true },
-          },
+          profile: { select: { firstName: true, lastName: true, avatarUrl: true } },
         },
       }),
       this.prisma.user.count({ where }),
@@ -130,31 +115,17 @@ export class AdminService {
       this.prisma.course.count({ where }),
     ]);
 
-    return {
-      data: courses,
-      total,
-      page,
-      limit,
-      pages: Math.ceil(total / limit),
-    };
+    return { data: courses, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
   async setCourseActiveStatus(courseId: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-    });
+    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Course not found');
 
     return this.prisma.course.update({
       where: { id: courseId },
       data: { isActive: !course.isActive },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        isActive: true,
-        createdAt: true,
-      },
+      select: { id: true, title: true, description: true, isActive: true, createdAt: true },
     });
   }
 }

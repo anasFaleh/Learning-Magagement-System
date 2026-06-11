@@ -12,11 +12,7 @@ import { MessageQueryDto } from './dto/message-query.dto';
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  async createMessage(data: {
-    courseId: string;
-    senderId: string;
-    content: string;
-  }) {
+  async createMessage(data: { courseId: string; senderId: string; content: string }) {
     // ✅ Fix: verify sender is enrolled or owns the course before saving
     const course = await this.prisma.course.findUnique({
       where: { id: data.courseId },
@@ -28,14 +24,10 @@ export class ChatService {
     if (!isTeacher) {
       const enrollment = await this.prisma.enrollment.findUnique({
         where: {
-          studentId_courseId: {
-            studentId: data.senderId,
-            courseId: data.courseId,
-          },
+          studentId_courseId: { studentId: data.senderId, courseId: data.courseId },
         },
       });
-      if (!enrollment)
-        throw new ForbiddenException('You are not a member of this course');
+      if (!enrollment) throw new ForbiddenException('You are not a member of this course');
     }
 
     return this.prisma.message.create({
@@ -49,9 +41,7 @@ export class ChatService {
           select: {
             id: true,
             email: true,
-            profile: {
-              select: { firstName: true, lastName: true, avatarUrl: true },
-            },
+            profile: { select: { firstName: true, lastName: true, avatarUrl: true } },
           },
         },
       },
@@ -76,9 +66,7 @@ export class ChatService {
             select: {
               id: true,
               email: true,
-              profile: {
-                select: { firstName: true, lastName: true, avatarUrl: true },
-              },
+              profile: { select: { firstName: true, lastName: true, avatarUrl: true } },
             },
           },
         },

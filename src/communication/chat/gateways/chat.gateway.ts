@@ -16,10 +16,7 @@ import { ConfigService } from '@nestjs/config';
   namespace: '/chat',
   cors: {
     // ✅ Dynamic CORS: reads from env. In development allows all origins.
-    origin: (
-      origin: string,
-      callback: (err: Error | null, allow?: boolean) => void,
-    ) => {
+    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
       const allowed = process.env.ALLOWED_ORIGINS
         ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
         : [];
@@ -97,9 +94,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           where: { studentId_courseId: { studentId: payload.sub, courseId } },
         });
         if (!enrollment) {
-          client.emit('error', {
-            message: 'You are not enrolled in this course',
-          });
+          client.emit('error', { message: 'You are not enrolled in this course' });
           client.disconnect();
           return;
         }
@@ -107,9 +102,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       client.data.user = { id: payload.sub, role: payload.role };
       await client.join(`course_${courseId}`);
-      this.logger.log(
-        `Client ${client.id} (user: ${payload.sub}) joined course_${courseId}`,
-      );
+      this.logger.log(`Client ${client.id} (user: ${payload.sub}) joined course_${courseId}`);
     } catch (error) {
       this.logger.error(
         `Connection error for client ${client.id}:`,

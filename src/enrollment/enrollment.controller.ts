@@ -43,10 +43,7 @@ export class EnrollmentController {
   @Roles('STUDENT')
   @ApiOperation({ summary: 'Student: Request to enroll in a course' })
   @ApiResponse({ status: 201, description: 'Enrollment request submitted' })
-  @ApiResponse({
-    status: 409,
-    description: 'Conflict - already enrolled or pending request',
-  })
+  @ApiResponse({ status: 409, description: 'Conflict - already enrolled or pending request' })
   requestEnrollment(
     @CurrentUser() user: { userId: string },
     @Body() dto: CreateEnrollmentRequestDto,
@@ -58,10 +55,7 @@ export class EnrollmentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('STUDENT')
   @ApiOperation({ summary: 'Student: Get my enrollment requests' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of student enrollment requests',
-  })
+  @ApiResponse({ status: 200, description: 'List of student enrollment requests' })
   getMyRequests(@CurrentUser() user: { userId: string }) {
     return this.enrollmentService.getMyRequests(user.userId);
   }
@@ -83,34 +77,21 @@ export class EnrollmentController {
 
   @Get('courses/:courseId/enrollment-requests')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'Teacher/Admin: Get all enrollment requests for a course',
-  })
+  @ApiOperation({ summary: 'Teacher/Admin: Get all enrollment requests for a course' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ['PENDING', 'APPROVED', 'REJECTED'],
-  })
+  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED'] })
   @ApiResponse({ status: 200, description: 'List of enrollment requests' })
   getCourseRequests(
     @Param('courseId') courseId: string,
     @Query('status') status: any,
     @CurrentUser() user: { userId: string; role: string },
   ) {
-    return this.enrollmentService.getCourseRequests(
-      courseId,
-      user.userId,
-      user.role,
-      status,
-    );
+    return this.enrollmentService.getCourseRequests(courseId, user.userId, user.role, status);
   }
 
   @Patch('enrollment-requests/:requestId/review')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'Teacher/Admin: Approve or reject an enrollment request',
-  })
+  @ApiOperation({ summary: 'Teacher/Admin: Approve or reject an enrollment request' })
   @ApiParam({ name: 'requestId', description: 'Enrollment Request ID' })
   @ApiResponse({ status: 200, description: 'Request reviewed' })
   reviewRequest(
@@ -118,12 +99,7 @@ export class EnrollmentController {
     @Body() dto: ReviewEnrollmentRequestDto,
     @CurrentUser() user: { userId: string; role: string },
   ) {
-    return this.enrollmentService.reviewRequest(
-      requestId,
-      user.userId,
-      user.role,
-      dto,
-    );
+    return this.enrollmentService.reviewRequest(requestId, user.userId, user.role, dto);
   }
 
   // ─────── ADMIN: Direct enrollment ───────
@@ -131,9 +107,7 @@ export class EnrollmentController {
   @Post('admin/courses/:courseId/enroll')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({
-    summary: 'Admin: Directly enroll a student (bypass request flow)',
-  })
+  @ApiOperation({ summary: 'Admin: Directly enroll a student (bypass request flow)' })
   @ApiParam({ name: 'courseId', description: 'Course ID' })
   @ApiResponse({ status: 201, description: 'Student enrolled successfully' })
   adminEnroll(
@@ -187,12 +161,7 @@ export class EnrollmentController {
     @Body() dto: UpdateProgressDto,
     @CurrentUser() user: { userId: string; role: string },
   ) {
-    return this.enrollmentService.updateProgress(
-      id,
-      dto,
-      user.userId,
-      user.role,
-    );
+    return this.enrollmentService.updateProgress(id, dto, user.userId, user.role);
   }
 
   @Get('my-enrollments')
@@ -202,10 +171,7 @@ export class EnrollmentController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiResponse({ status: 200, description: 'Student enrollments retrieved' })
-  getMyEnrollments(
-    @CurrentUser() user: { userId: string },
-    @Query() query: EnrollmentQueryDto,
-  ) {
+  getMyEnrollments(@CurrentUser() user: { userId: string }, @Query() query: EnrollmentQueryDto) {
     return this.enrollmentService.getStudentEnrollments(user.userId, {
       page: Number(query?.page ?? 1),
       limit: Number(query?.limit ?? 10),

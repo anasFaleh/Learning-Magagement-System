@@ -7,14 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserQueryDto } from './dto/user-query.dto';
@@ -36,10 +29,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current authenticated user profile' })
   @ApiResponse({ status: 200, description: 'User profile retrieved' })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing JWT',
-  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT' })
   async getMyProfile(@CurrentUser() user: { userId: string; role: UserRole }) {
     return this.usersService.getMyProfile(user.userId);
   }
@@ -49,10 +39,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user details by ID (self or admin only)' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User details retrieved' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Cannot access other users profile',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot access other users profile' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUser(
     @CurrentUser() user: { userId: string; role: UserRole },
@@ -67,10 +54,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user profile (self or admin only)' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Cannot update other users profile',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot update other users profile' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateProfile(
     @CurrentUser() user: { userId: string; role: UserRole },
@@ -86,10 +70,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Activate or deactivate user account (admin only)' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User activation status updated' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Only admins can manage user activation',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only admins can manage user activation' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async setActivation(
     @CurrentUser() user: { userId: string; role: UserRole },
@@ -103,28 +84,13 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Search and filter users (admin only)' })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    description: 'Search by name or email',
-  })
-  @ApiQuery({
-    name: 'role',
-    required: false,
-    description: 'Filter by user role',
-  })
-  @ApiQuery({
-    name: 'isActive',
-    required: false,
-    description: 'Filter by active status',
-  })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by name or email' })
+  @ApiQuery({ name: 'role', required: false, description: 'Filter by user role' })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Results per page' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Only admins can search users',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Only admins can search users' })
   async searchUsers(@Query() query: UserQueryDto) {
     return this.usersService.searchUsers(query);
   }
